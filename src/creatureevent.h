@@ -82,6 +82,7 @@ public:
 	bool playerLogin(Player* player) const;
 	bool playerLogout(Player* player) const;
 	bool playerAdvance(Player* player, skills_t, uint32_t, uint32_t);
+	void playerExtendedOpcode(Player* player, uint8_t opcode, std::string_view buffer);
 
 	CreatureEvent* getEventByName(std::string_view name, bool forceLoaded = true);
 

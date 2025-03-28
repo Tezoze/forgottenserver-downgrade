@@ -19,7 +19,7 @@ public:
 	{
 		for (Creature* spectator : spectators.vec) {
 			auto it = std::find(vec.begin(), vec.end(), spectator);
-			if (it != end()) {
+			if (it != vec.end()) {
 				continue;
 			}
 			vec.emplace_back(spectator);
@@ -29,11 +29,22 @@ public:
 	void erase(Creature* spectator)
 	{
 		auto it = std::find(vec.begin(), vec.end(), spectator);
-		if (it == end()) {
+		if (it == vec.end()) {
 			return;
 		}
-		std::iter_swap(it, end() - 1);
+		std::iter_swap(it, vec.end() - 1);
 		vec.pop_back();
+	}
+
+	void clear() { vec.clear(); }
+	
+	void push_back(Creature* c) { vec.push_back(c); }
+	
+	void insert(Creature* c) { 
+		auto it = std::find(vec.begin(), vec.end(), c);
+		if (it == vec.end()) {
+			vec.push_back(c);
+		}
 	}
 
 	size_t size() const { return vec.size(); }

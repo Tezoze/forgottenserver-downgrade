@@ -6,12 +6,13 @@
 
 #include "const.h"
 #include "luascript.h"
+#include <unordered_map>
 
 class Party;
 class Player;
 
-using UsersMap = std::map<uint32_t, Player*>;
-using InvitedMap = std::map<uint32_t, const Player*>;
+using UsersMap = std::unordered_map<uint32_t, Player*>;
+using InvitedMap = std::unordered_map<uint32_t, const Player*>;
 
 class ChatChannel
 {
@@ -116,10 +117,10 @@ public:
 	LuaScriptInterface* getScriptInterface() { return &scriptInterface; }
 
 private:
-	std::map<uint16_t, ChatChannel> normalChannels;
-	std::map<uint16_t, PrivateChatChannel> privateChannels;
-	std::map<Party*, ChatChannel> partyChannels;
-	std::map<uint32_t, ChatChannel> guildChannels;
+	std::unordered_map<uint16_t, ChatChannel> normalChannels;
+	std::unordered_map<uint16_t, PrivateChatChannel> privateChannels;
+	std::unordered_map<Party*, ChatChannel> partyChannels;
+	std::unordered_map<uint32_t, ChatChannel> guildChannels;
 
 	LuaScriptInterface scriptInterface;
 

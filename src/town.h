@@ -6,6 +6,7 @@
 
 #include "position.h"
 #include "tools.h"
+#include <unordered_map>
 
 class Town
 {
@@ -25,7 +26,7 @@ private:
 	Position templePosition;
 };
 
-using TownMap = std::map<uint32_t, Town*>;
+using TownMap = std::unordered_map<uint32_t, Town*>;
 
 class Towns
 {

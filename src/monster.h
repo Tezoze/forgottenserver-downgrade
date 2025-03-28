@@ -1,6 +1,3 @@
-// Copyright 2023 The Forgotten Server Authors. All rights reserved.
-// Use of this source code is governed by the GPL-2.0 License that can be found in the LICENSE file.
-
 #ifndef FS_MONSTER_H
 #define FS_MONSTER_H
 
@@ -32,14 +29,13 @@ public:
 	explicit Monster(MonsterType* mType);
 	~Monster();
 
-	using Creature::onWalk;
-
-	// non-copyable
 	Monster(const Monster&) = delete;
 	Monster& operator=(const Monster&) = delete;
 
 	Monster* getMonster() override { return this; }
 	const Monster* getMonster() const override { return this; }
+
+	void onWalk(Direction& dir) override;
 
 	void setID() override
 	{
@@ -55,7 +51,7 @@ public:
 	void setName(std::string_view name);
 
 	const std::string& getNameDescription() const override;
-	void setNameDescription(std::string_view nameDescription) { this->nameDescription = nameDescription; };
+	void setNameDescription(std::string_view nameDescription) { this->nameDescription = nameDescription; }
 
 	std::string getDescription(int32_t) const override { return nameDescription + '.'; }
 
@@ -80,7 +76,6 @@ public:
 	bool canWalkOnFieldType(CombatType_t combatType) const;
 
 	void onAttackedCreatureDisappear(bool isLogout) override;
-
 	void onCreatureAppear(Creature* creature, bool isLogin) override;
 	void onRemoveCreature(Creature* creature, bool isLogout) override;
 	void onCreatureMove(Creature* creature, const Tile* newTile, const Position& newPos, const Tile* oldTile,
@@ -128,7 +123,6 @@ public:
 
 	static uint32_t monsterAutoID;
 
-	// for lua module
 	auto getMonsterType() const { return mType; }
 
 	bool isInSpawnRange(const Position& pos) const;
@@ -143,6 +137,23 @@ public:
 	void removeFriend(Creature* creature);
 	void addTarget(Creature* creature, bool pushFront = false);
 	void removeTarget(Creature* creature);
+
+	void onAttackedCreature(Creature* target, bool isPlayer = true) override;
+	void onAttackedCreatureDrainHealth(Creature* target, int32_t points) override;
+	void onAttackedCreatureKilled(Creature* target) override;
+	bool onKilledCreature(Creature* target, bool lastHit) override;
+	void onGainExperience(uint64_t gainExp, Creature* target) override;
+	void onAttacked() override;
+	void onIdleStatus() override;
+	void onAddCondition(ConditionType_t type) override;
+	void onEndCondition(ConditionType_t type) override;
+	void onAttacking(uint32_t interval) override;
+	void death(Creature* lastHitCreature) override;
+	Item* getCorpse(Creature* lastHitCreature, Creature* mostDamageCreature) override; // Moved to public
+	void onAddCreatureCheck() override;
+	void onRemoveCreatureCheck() override;
+	void onChangeZone(ZoneType_t zone) override;
+	bool onDeath();
 
 private:
 	CreatureHashSet friendList;
@@ -165,6 +176,7 @@ private:
 	int32_t targetChangeCooldown = 0;
 	int32_t challengeFocusDuration = 0;
 	int32_t stepDuration = 0;
+	uint32_t supportTargetId = 0;
 
 	Position masterPos;
 
@@ -179,18 +191,10 @@ private:
 	void onCreatureFound(Creature* creature, bool pushFront = false);
 
 	void updateLookDirection();
-
 	void updateTargetList();
 	void clearTargetList();
 	void clearFriendList();
-
-	void death(Creature* lastHitCreature) override;
-	Item* getCorpse(Creature* lastHitCreature, Creature* mostDamageCreature) override;
-
 	void updateIdleStatus();
-
-	void onAddCondition(ConditionType_t type) override;
-	void onEndCondition(ConditionType_t type) override;
 
 	bool canUseAttack(const Position& pos, const Creature* target) const;
 	bool canUseSpell(const Position& pos, const Position& targetPos, const spellBlock_t& sb, uint32_t interval,

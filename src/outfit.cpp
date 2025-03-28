@@ -5,7 +5,6 @@
 
 #include "outfit.h"
 
-#include "pugicast.h"
 #include "tools.h"
 
 bool Outfits::loadFromXml()
@@ -28,7 +27,7 @@ bool Outfits::loadFromXml()
 			continue;
 		}
 
-		uint16_t type = pugi::cast<uint16_t>(attr.value());
+		uint16_t type = fs::xml_parse<uint16_t>(attr.value());
 		if (type > PLAYERSEX_LAST) {
 			std::cout << "[Warning - Outfits::loadFromXml] Invalid outfit type " << type << "." << std::endl;
 			continue;
@@ -40,7 +39,7 @@ bool Outfits::loadFromXml()
 			continue;
 		}
 
-		const auto lookType = pugi::cast<uint16_t>(lookTypeAttribute.value());
+		uint16_t lookType = fs::xml_parse<uint16_t>(lookTypeAttribute);
 		outfits.emplace(std::piecewise_construct, std::forward_as_tuple(lookType),
 		                std::forward_as_tuple(outfitNode.attribute("name").as_string(), lookType,
 		                                      static_cast<PlayerSex_t>(type), outfitNode.attribute("premium").as_bool(),

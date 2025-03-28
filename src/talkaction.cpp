@@ -6,7 +6,6 @@
 #include "talkaction.h"
 
 #include "player.h"
-#include "pugicast.h"
 
 TalkActions::TalkActions() : scriptInterface("TalkAction Interface") { scriptInterface.initState(); }
 
@@ -131,7 +130,9 @@ bool TalkAction::configureEvent(const pugi::xml_node& node)
 
 	pugi::xml_attribute accountTypeAttribute = node.attribute("accountType");
 	if (accountTypeAttribute) {
-		requiredAccountType = static_cast<AccountType_t>(pugi::cast<int32_t>(accountTypeAttribute.value()));
+		requiredAccountType = static_cast<AccountType_t>(
+			
+			<int32_t>(accountTypeAttribute.value()));
 	}
 
 	for (std::string_view word : explodeString(wordsAttribute.as_string(), ";")) {
@@ -163,4 +164,10 @@ bool TalkAction::executeSay(Player* player, std::string_view words, std::string_
 	lua_pushinteger(L, type);
 
 	return scriptInterface->callFunction(4);
+}
+
+bool TalkActions::reload()
+{
+	clear(false);
+	return loadFromXml();
 }

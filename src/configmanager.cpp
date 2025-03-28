@@ -8,7 +8,6 @@
 
 #include "game.h"
 #include "monster.h"
-#include "pugicast.h"
 
 #ifdef _WIN32
 #include "lua.hpp"
@@ -41,7 +40,7 @@ template <typename T>
 auto getEnv(const char* envVar, T&& defaultValue)
 {
 	if (auto value = std::getenv(envVar)) {
-		return pugi::cast<std::decay_t<T>>(value);
+		return fs::xml_parse<std::decay_t<T>>(value);
 	}
 	return defaultValue;
 }
@@ -136,15 +135,15 @@ ExperienceStages loadXMLStages()
 			uint32_t minLevel = 1, maxLevel = std::numeric_limits<uint32_t>::max(), multiplier = 1;
 
 			if (auto minLevelAttribute = stageNode.attribute("minlevel")) {
-				minLevel = pugi::cast<uint32_t>(minLevelAttribute.value());
+				minLevel = fs::xml_parse<uint32_t>(minLevelAttribute.value());
 			}
 
 			if (auto maxLevelAttribute = stageNode.attribute("maxlevel")) {
-				maxLevel = pugi::cast<uint32_t>(maxLevelAttribute.value());
+				maxLevel = fs::xml_parse<uint32_t>(maxLevelAttribute.value());
 			}
 
 			if (auto multiplierAttribute = stageNode.attribute("multiplier")) {
-				multiplier = pugi::cast<uint32_t>(multiplierAttribute.value());
+				multiplier = fs::xml_parse<uint32_t>(multiplierAttribute.value());
 			}
 
 			stages.emplace_back(minLevel, maxLevel, multiplier);
@@ -176,7 +175,23 @@ OTCFeatures loadLuaOTCFeatures(lua_State* L)
 
 } // namespace
 
-bool ConfigManager::load()
+namespace ConfigManager {
+
+// Add setDefault function
+void setDefault(Integer key, const char* value)
+{
+	integers[key] = std::stoll(value);
+}
+
+void loadDefaults()
+{
+	// ... existing defaults
+
+	setDefault(NETWORK_QUEUE_SIZE, "100");
+	setDefault(ITEM_POOL_SIZE, "1000");
+}
+
+bool load()
 {
 	lua_State* L = luaL_newstate();
 	if (!L) {
@@ -184,6 +199,9 @@ bool ConfigManager::load()
 	}
 
 	luaL_openlibs(L);
+	
+	// Load default values first
+	loadDefaults();
 
 	strings[CONFIG_FILE] = "config.lua";
 	if (luaL_dofile(L, getString(String::CONFIG_FILE).data())) {
@@ -327,6 +345,8 @@ bool ConfigManager::load()
 	    getGlobalInteger(L, "RANGE_USE_ITEM_EX_INTERVAL", RANGE_USE_ITEM_EX_INTERVAL);
 	integers[Integer::RANGE_ROTATE_ITEM_INTERVAL] =
 	    getGlobalInteger(L, "RANGE_ROTATE_ITEM_INTERVAL", RANGE_ROTATE_ITEM_INTERVAL);
+	integers[Integer::NETWORK_QUEUE_SIZE] = getGlobalInteger(L, "networkQueueSize", 100);
+	integers[Integer::ITEM_POOL_SIZE] = getGlobalInteger(L, "itemPoolSize", 1000);
 
 	expStages = loadXMLStages();
 	if (expStages.empty()) {
@@ -421,3 +441,5 @@ bool ConfigManager::setInteger(Integer what, int64_t value)
 }
 
 const OTCFeatures& ConfigManager::getOTCFeatures() { return otcFeatures; }
+
+} // namespace ConfigManager

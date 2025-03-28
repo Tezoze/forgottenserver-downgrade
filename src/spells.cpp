@@ -11,7 +11,6 @@
 #include "game.h"
 #include "luavariant.h"
 #include "monster.h"
-#include "pugicast.h"
 
 extern Game g_game;
 extern Spells* g_spells;
@@ -373,32 +372,34 @@ bool Spell::configureSpell(const pugi::xml_node& node)
 
 	pugi::xml_attribute attr;
 	if ((attr = node.attribute("level")) || (attr = node.attribute("lvl"))) {
-		level = pugi::cast<uint32_t>(attr.value());
+		level = 
+			
+			<uint32_t>(attr.value());
 	}
 
 	if ((attr = node.attribute("magiclevel")) || (attr = node.attribute("maglv"))) {
-		magLevel = pugi::cast<uint32_t>(attr.value());
+		magLevel = fs::xml_parse<uint32_t>(attr.value());
 	}
 
 	if ((attr = node.attribute("mana"))) {
-		mana = pugi::cast<uint32_t>(attr.value());
+		mana = fs::xml_parse<uint32_t>(attr.value());
 	}
 
 	if ((attr = node.attribute("manapercent"))) {
-		manaPercent = pugi::cast<uint32_t>(attr.value());
+		manaPercent = fs::xml_parse<uint32_t>(attr.value());
 	}
 
 	if ((attr = node.attribute("soul"))) {
-		soul = pugi::cast<uint32_t>(attr.value());
+		soul = fs::xml_parse<uint32_t>(attr.value());
 	}
 
 	if ((attr = node.attribute("range"))) {
-		range = pugi::cast<int32_t>(attr.value());
+		range = fs::xml_parse<int32_t>(attr.value());
 	}
 
 	if ((attr = node.attribute("cooldown")) || (attr = node.attribute("exhaustion")) ||
 	    (attr = node.attribute("exhaust"))) {
-		cooldown = pugi::cast<uint32_t>(attr.value());
+		cooldown = fs::xml_parse<uint32_t>(attr.value());
 	}
 
 	if ((attr = node.attribute("premium")) || (attr = node.attribute("prem"))) {
@@ -994,10 +995,10 @@ bool RuneSpell::configureEvent(const pugi::xml_node& node)
 		std::cout << "[Error - RuneSpell::configureSpell] Rune spell without id." << std::endl;
 		return false;
 	}
-	runeId = pugi::cast<uint16_t>(attr.value());
+	runeId = fs::xml_parse<uint16_t>(attr.value());
 
 	if ((attr = node.attribute("charges"))) {
-		charges = pugi::cast<uint32_t>(attr.value());
+		charges = fs::xml_parse<uint32_t>(attr.value());
 	} else {
 		charges = 0;
 	}

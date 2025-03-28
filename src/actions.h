@@ -7,6 +7,7 @@
 #include "baseevents.h"
 #include "enums.h"
 #include "luascript.h"
+#include <unordered_map>
 
 class Action;
 using Action_ptr = std::unique_ptr<Action>;
@@ -105,7 +106,7 @@ private:
 	Event_ptr getEvent(std::string_view nodeName) override;
 	bool registerEvent(Event_ptr event, const pugi::xml_node& node) override;
 
-	using ActionUseMap = std::map<uint16_t, Action>;
+	using ActionUseMap = std::unordered_map<uint16_t, Action>;
 	ActionUseMap useItemMap;
 	ActionUseMap uniqueItemMap;
 	ActionUseMap actionItemMap;

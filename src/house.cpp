@@ -9,7 +9,6 @@
 #include "configmanager.h"
 #include "game.h"
 #include "iologindata.h"
-#include "pugicast.h"
 
 extern Game g_game;
 
@@ -576,7 +575,7 @@ bool Houses::loadHousesXML(const std::string& filename)
 			return false;
 		}
 
-		int32_t houseId = pugi::cast<int32_t>(houseIdAttribute.value());
+		int32_t houseId = fs::xml_parse<int32_t>(houseIdAttribute.value());
 
 		House* house = getHouse(houseId);
 		if (!house) {
@@ -586,17 +585,17 @@ bool Houses::loadHousesXML(const std::string& filename)
 
 		house->setName(houseNode.attribute("name").as_string());
 
-		Position entryPos(pugi::cast<uint16_t>(houseNode.attribute("entryx").value()),
-		                  pugi::cast<uint16_t>(houseNode.attribute("entryy").value()),
-		                  pugi::cast<uint16_t>(houseNode.attribute("entryz").value()));
+		Position entryPos(fs::xml_parse<uint16_t>(houseNode.attribute("entryx").value()),
+		                  fs::xml_parse<uint16_t>(houseNode.attribute("entryy").value()),
+		                  fs::xml_parse<uint16_t>(houseNode.attribute("entryz").value()));
 		if (entryPos.x == 0 && entryPos.y == 0 && entryPos.z == 0) {
 			std::cout << "[Warning - Houses::loadHousesXML] House entry not set"
 			          << " - Name: " << house->getName() << " - House id: " << houseId << std::endl;
 		}
 		house->setEntryPos(entryPos);
 
-		house->setRent(pugi::cast<uint32_t>(houseNode.attribute("rent").value()));
-		house->setTownId(pugi::cast<uint32_t>(houseNode.attribute("townid").value()));
+		house->setRent(fs::xml_parse<uint32_t>(houseNode.attribute("rent").value()));
+		house->setTownId(fs::xml_parse<uint32_t>(houseNode.attribute("townid").value()));
 
 		house->setOwner(0, false);
 	}

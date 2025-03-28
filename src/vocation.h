@@ -7,6 +7,8 @@
 #include "configmanager.h"
 #include "enums.h"
 #include "item.h"
+#include <string>
+#include <unordered_map>
 
 class Vocation
 {
@@ -89,7 +91,7 @@ private:
 	bool magicShield = false;
 };
 
-using VocationMap = std::map<uint16_t, Vocation>;
+using VocationMap = std::unordered_map<uint16_t, Vocation>;
 
 class Vocations
 {

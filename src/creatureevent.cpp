@@ -128,14 +128,19 @@ bool CreatureEvents::playerLogout(Player* player) const
 
 bool CreatureEvents::playerAdvance(Player* player, skills_t skill, uint32_t oldLevel, uint32_t newLevel)
 {
-	for (auto& it : creatureEvents) {
-		if (it.second.getEventType() == CREATURE_EVENT_ADVANCE) {
-			if (!it.second.executeAdvance(player, skill, oldLevel, newLevel)) {
-				return false;
-			}
+	for (const auto& it : player->getCreatureEvents(CREATURE_EVENT_ADVANCE)) {
+		if (!it->executeAdvance(player, skill, oldLevel, newLevel)) {
+			return false;
 		}
 	}
 	return true;
+}
+
+void CreatureEvents::playerExtendedOpcode(Player* player, uint8_t opcode, std::string_view buffer)
+{
+	for (const auto& it : player->getCreatureEvents(CREATURE_EVENT_EXTENDED_OPCODE)) {
+		it->executeExtendedOpcode(player, opcode, buffer);
+	}
 }
 
 /////////////////////////////////////

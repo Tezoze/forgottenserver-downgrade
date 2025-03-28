@@ -9,7 +9,6 @@
 #include "events.h"
 #include "game.h"
 #include "monster.h"
-#include "pugicast.h"
 #include "scheduler.h"
 
 extern Monsters g_monsters;
@@ -36,14 +35,16 @@ bool Spawns::loadFromXml(std::string_view filename)
 	loaded = true;
 
 	for (auto& spawnNode : doc.child("spawns").children()) {
-		Position centerPos(pugi::cast<uint16_t>(spawnNode.attribute("centerx").value()),
-		                   pugi::cast<uint16_t>(spawnNode.attribute("centery").value()),
-		                   pugi::cast<uint16_t>(spawnNode.attribute("centerz").value()));
+		Position centerPos(
+			
+			<uint16_t>(spawnNode.attribute("centerx").value()),
+		                   fs::xml_parse<uint16_t>(spawnNode.attribute("centery").value()),
+		                   fs::xml_parse<uint16_t>(spawnNode.attribute("centerz").value()));
 
 		int32_t radius;
 		pugi::xml_attribute radiusAttribute = spawnNode.attribute("radius");
 		if (radiusAttribute) {
-			radius = pugi::cast<int32_t>(radiusAttribute.value());
+			radius = fs::xml_parse<int32_t>(radiusAttribute.value());
 		} else {
 			radius = -1;
 		}
@@ -64,10 +65,11 @@ bool Spawns::loadFromXml(std::string_view filename)
 
 		for (auto& childNode : spawnNode.children()) {
 			if (caseInsensitiveEqual(childNode.name(), "monsters")) {
-				Position pos(centerPos.x + pugi::cast<uint16_t>(childNode.attribute("x").value()),
-				             centerPos.y + pugi::cast<uint16_t>(childNode.attribute("y").value()), centerPos.z);
+				uint16_t x = fs::xml_parse<uint16_t>(childNode.attribute("x"));
+				uint16_t y = fs::xml_parse<uint16_t>(childNode.attribute("y"));
+				Position pos(centerPos.x + x, centerPos.y + y, centerPos.z);
 
-				int32_t interval = pugi::cast<int32_t>(childNode.attribute("spawntime").value()) * 1000;
+				int32_t interval = fs::xml_parse<int32_t>(childNode.attribute("spawntime")) * 1000;
 				if (interval < MINSPAWN_INTERVAL) {
 					std::cout << "[Warning - Spawns::loadFromXml] " << pos << " spawntime can not be less than "
 					          << MINSPAWN_INTERVAL / 1000 << " seconds." << std::endl;
@@ -107,7 +109,7 @@ bool Spawns::loadFromXml(std::string_view filename)
 					uint16_t chance = 100 / monstersCount;
 					pugi::xml_attribute chanceAttribute = monsterNode.attribute("chance");
 					if (chanceAttribute) {
-						chance = pugi::cast<uint16_t>(chanceAttribute.value());
+						chance = fs::xml_parse<uint16_t>(chanceAttribute.value());
 					}
 
 					if (chance + totalChance > 100) {
@@ -146,14 +148,15 @@ bool Spawns::loadFromXml(std::string_view filename)
 
 				pugi::xml_attribute directionAttribute = childNode.attribute("direction");
 				if (directionAttribute) {
-					dir = static_cast<Direction>(pugi::cast<uint16_t>(directionAttribute.value()));
+					dir = static_cast<Direction>(fs::xml_parse<uint16_t>(directionAttribute.value()));
 				} else {
 					dir = DIRECTION_NORTH;
 				}
 
-				Position pos(centerPos.x + pugi::cast<uint16_t>(childNode.attribute("x").value()),
-				             centerPos.y + pugi::cast<uint16_t>(childNode.attribute("y").value()), centerPos.z);
-				int32_t interval = pugi::cast<int32_t>(childNode.attribute("spawntime").value()) * 1000;
+				uint16_t x = fs::xml_parse<uint16_t>(childNode.attribute("x"));
+				uint16_t y = fs::xml_parse<uint16_t>(childNode.attribute("y"));
+				Position pos(centerPos.x + x, centerPos.y + y, centerPos.z);
+				int32_t interval = fs::xml_parse<int32_t>(childNode.attribute("spawntime")) * 1000;
 				if (interval >= MINSPAWN_INTERVAL && interval <= MAXSPAWN_INTERVAL) {
 					spawn.addMonster(nameAttribute.as_string(), pos, dir, static_cast<uint32_t>(interval));
 				} else {
@@ -173,6 +176,10 @@ bool Spawns::loadFromXml(std::string_view filename)
 					continue;
 				}
 
+				uint16_t x = fs::xml_parse<uint16_t>(childNode.attribute("x"));
+				uint16_t y = fs::xml_parse<uint16_t>(childNode.attribute("y"));
+				Position position(centerPos.x + x, centerPos.y + y, centerPos.z);
+
 				Npc* npc = Npc::createNpc(nameAttribute.as_string());
 				if (!npc) {
 					continue;
@@ -180,13 +187,10 @@ bool Spawns::loadFromXml(std::string_view filename)
 
 				pugi::xml_attribute directionAttribute = childNode.attribute("direction");
 				if (directionAttribute) {
-					npc->setDirection(static_cast<Direction>(pugi::cast<uint16_t>(directionAttribute.value())));
+					npc->setDirection(static_cast<Direction>(fs::xml_parse<uint16_t>(directionAttribute.value())));
 				}
 
-				npc->setMasterPos(
-				    Position(centerPos.x + pugi::cast<uint16_t>(childNode.attribute("x").value()),
-				             centerPos.y + pugi::cast<uint16_t>(childNode.attribute("y").value()), centerPos.z),
-				    radius);
+				npc->setMasterPos(position, radius);
 				npcList.push_front(npc);
 			}
 		}

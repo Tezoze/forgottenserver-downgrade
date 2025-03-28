@@ -8,6 +8,7 @@
 #include "enums.h"
 #include "position.h"
 #include "spectators.h"
+#include <algorithm>
 
 #if LUA_VERSION_NUM >= 502
 #ifndef LUA_COMPAT_ALL
@@ -98,7 +99,6 @@ class Npc;
 class Party;
 class Player;
 class RuneSpell;
-class SpectatorVec;
 class Spell;
 class TalkAction;
 class Teleport;
@@ -751,6 +751,18 @@ inline void setField(lua_State* L, const char* index, std::string_view value)
 	lua_setfield(L, -2, index);
 }
 
+// Push
+void pushBoolean(lua_State* L, bool value);
+void pushCombatDamage(lua_State* L, const CombatDamage& damage);
+void pushInstantSpell(lua_State* L, const InstantSpell& spell);
+void pushSpell(lua_State* L, const Spell& spell);
+void pushPosition(lua_State* L, const Position& position, int32_t stackpos = 0);
+void pushOutfit(lua_State* L, const Outfit_t& outfit);
+void pushOutfit(lua_State* L, const Outfit* outfit);
+void pushMount(lua_State* L, const Mount* mount);
+void pushLoot(lua_State* L, const std::vector<LootBlock>& lootList);
+void pushReflect(lua_State* L, const Reflect& reflect);
+
 template <class T>
 inline bool isType(lua_State* L, int32_t arg)
 {
@@ -768,18 +780,6 @@ inline bool isType(lua_State* L, int32_t arg)
 
 	return userdataType == classType;
 }
-
-// Push
-void pushBoolean(lua_State* L, bool value);
-void pushCombatDamage(lua_State* L, const CombatDamage& damage);
-void pushInstantSpell(lua_State* L, const InstantSpell& spell);
-void pushSpell(lua_State* L, const Spell& spell);
-void pushPosition(lua_State* L, const Position& position, int32_t stackpos = 0);
-void pushOutfit(lua_State* L, const Outfit_t& outfit);
-void pushOutfit(lua_State* L, const Outfit* outfit);
-void pushMount(lua_State* L, const Mount* mount);
-void pushLoot(lua_State* L, const std::vector<LootBlock>& lootList);
-void pushReflect(lua_State* L, const Reflect& reflect);
 
 // Userdata
 template <class T>
@@ -818,8 +818,6 @@ inline void getSpectators(lua_State* L, int32_t arg, SpectatorVec& spectators)
 		}
 		lua_pop(L, 1);
 	}
-
-	lua_pop(L, 1);
 }
 } // namespace Lua
 

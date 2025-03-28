@@ -149,6 +149,8 @@ public:
 	void turnToCreature(Creature* creature);
 	void setCreatureFocus(Creature* creature);
 
+	void onThink(uint32_t interval);
+
 	const auto& getSpectators() { return spectators; }
 
 	auto& getScriptInterface() { return npcEventHandler->scriptInterface; }
@@ -164,7 +166,6 @@ private:
 	                    const Position& oldPos, bool teleport) override;
 
 	void onCreatureSay(Creature* creature, SpeakClasses type, std::string_view text) override;
-	void onThink(uint32_t interval) override;
 	std::string getDescription(int32_t lookDistance) const override;
 
 	bool isImmune(CombatType_t) const override { return !attackable; }

@@ -78,13 +78,16 @@ public:
 
 	const auto& getTalkactions() const { return talkActions; }
 
+	bool onPlayerSay(Player* player, std::string_view words, SpeakClasses type);
+	bool reload();
+
 private:
 	LuaScriptInterface& getScriptInterface() override;
 	std::string_view getScriptBaseName() const override { return "talkactions"; }
 	Event_ptr getEvent(std::string_view nodeName) override;
 	bool registerEvent(Event_ptr event, const pugi::xml_node& node) override;
 
-	std::map<std::string, TalkAction> talkActions;
+	std::unordered_map<std::string, TalkAction> talkActions;
 
 	LuaScriptInterface scriptInterface;
 };

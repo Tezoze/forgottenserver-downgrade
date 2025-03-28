@@ -4,6 +4,7 @@
 #ifndef FS_CONFIGMANAGER_H
 #define FS_CONFIGMANAGER_H
 
+
 namespace ConfigManager {
 
 enum Boolean
@@ -127,6 +128,8 @@ enum Integer
 	RANGE_USE_ITEM_INTERVAL,
 	RANGE_USE_ITEM_EX_INTERVAL,
 	RANGE_ROTATE_ITEM_INTERVAL,
+	NETWORK_QUEUE_SIZE,
+	ITEM_POOL_SIZE,
 
 	LAST_INTEGER /* this must be the last one */
 };

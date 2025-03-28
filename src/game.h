@@ -4,6 +4,12 @@
 #ifndef FS_GAME_H
 #define FS_GAME_H
 
+#include <atomic>
+#include <mutex>
+#include <queue>
+#include <thread>
+#include <condition_variable>
+
 #include "account.h"
 #include "combat.h"
 #include "container.h"
@@ -16,6 +22,16 @@
 #include "position.h"
 #include "raids.h"
 #include "wildcardtree.h"
+
+// Add hash function for Item* pointers
+namespace std {
+template <>
+struct hash<Item*> {
+    std::size_t operator()(const Item* item) const noexcept {
+        return std::hash<uintptr_t>{}(reinterpret_cast<uintptr_t>(item));
+    }
+};
+}
 
 class ServiceManager;
 class Creature;
@@ -412,6 +428,7 @@ public:
 	void updateCreatureWalk(uint32_t creatureId);
 	void checkCreatureAttack(uint32_t creatureId);
 	void checkCreatures(size_t index);
+	void checkCreaturesChunk(size_t chunk); // For staggered processing
 
 	bool combatBlockHit(CombatDamage& damage, Creature* attacker, Creature* target, bool checkDefense, bool checkArmor,
 	                    bool field, bool ignoreResistances = false);
@@ -423,14 +440,14 @@ public:
 
 	// animation help functions
 	void addCreatureHealth(const Creature* target);
-	static void addCreatureHealth(const SpectatorVec& spectators, const Creature* target);
+	void addCreatureHealth(const SpectatorVec& spectators, const Creature* target);
 	void addAnimatedText(std::string_view message, const Position& pos, TextColor_t color);
-	static void addAnimatedText(const SpectatorVec& list, std::string_view message, const Position& pos,
+	void addAnimatedText(const SpectatorVec& list, std::string_view message, const Position& pos,
 	                            TextColor_t color);
 	void addMagicEffect(const Position& pos, uint8_t effect);
-	static void addMagicEffect(const SpectatorVec& spectators, const Position& pos, uint8_t effect);
+	void addMagicEffect(const SpectatorVec& spectators, const Position& pos, uint8_t effect);
 	void addDistanceEffect(const Position& fromPos, const Position& toPos, uint8_t effect);
-	static void addDistanceEffect(const SpectatorVec& spectators, const Position& fromPos, const Position& toPos,
+	void addDistanceEffect(const SpectatorVec& spectators, const Position& fromPos, const Position& toPos,
 	                              uint8_t effect);
 
 	void setAccountStorageValue(const uint32_t accountId, const uint32_t key, const int32_t value);
@@ -447,7 +464,7 @@ public:
 	void incrementMotdNum() { motdNum++; }
 
 	const std::unordered_map<uint32_t, Player*>& getPlayers() const { return players; }
-	const std::map<uint32_t, Npc*>& getNpcs() const { return npcs; }
+	const std::unordered_map<uint32_t, Npc*>& getNpcs() const { return npcs; }
 
 	void addPlayer(Player* player);
 	void removePlayer(Player* player);
@@ -493,8 +510,33 @@ public:
 	std::optional<int64_t> getStorageValue(uint32_t key) const;
 	decltype(auto) getStorageMap() const { return storageMap; }
 
+	Item* getPooledItem(uint16_t id);
+	void returnPooledItem(Item* item);
+	Item* createItem(uint16_t itemId, uint16_t count = 0);
+
+	// Thread-related methods
+	void startNetworkThread();
+	void stopNetworkThread();
+	void enqueueNetworkUpdate(Player* player, NetworkMessage&& msg);
+
+	void updatePlayerHelpers(Player& player);
+
+protected:
+	// Thread-safe network update queue
+	std::queue<std::pair<Player*, NetworkMessage>> networkQueue;
+	std::mutex networkMutex;
+	std::condition_variable networkCondition;
+	std::atomic<bool> networkThreadRunning{false};
+	std::thread networkSendThread;
+	
+	// Object pooling for memory management
+	std::vector<Item*> itemPool;
+	std::mutex itemPoolMutex;
+	
+	void networkThread();
+
 private:
-	std::map<uint32_t, int64_t> storageMap;
+	std::unordered_map<uint32_t, int64_t> storageMap;
 
 	bool playerSaySpell(Player* player, SpeakClasses type, std::string_view text);
 	void playerWhisper(Player* player, std::string_view text);
@@ -510,7 +552,7 @@ private:
 	std::unordered_map<uint32_t, Player*> mappedPlayerGuids;
 	std::unordered_map<uint32_t, Guild*> guilds;
 	std::unordered_map<uint16_t, Item*> uniqueItems;
-	std::map<uint32_t, uint32_t> stages;
+	std::unordered_map<uint32_t, uint32_t> stages;
 	std::unordered_map<uint32_t, std::unordered_map<uint32_t, int32_t>> accountStorageMap;
 
 	std::list<Item*> decayItems[EVENT_DECAY_BUCKETS];
@@ -523,13 +565,13 @@ private:
 
 	WildcardTreeNode wildcardTree{false};
 
-	std::map<uint32_t, Npc*> npcs;
-	std::map<uint32_t, Monster*> monsters;
+	std::unordered_map<uint32_t, Npc*> npcs;
+	std::unordered_map<uint32_t, Monster*> monsters;
 
 	// list of items that are in trading state, mapped to the player
-	std::map<Item*, uint32_t> tradeItems;
+	std::unordered_map<Item*, uint32_t> tradeItems;
 
-	std::map<uint32_t, BedItem*> bedSleepersMap;
+	std::unordered_map<uint32_t, BedItem*> bedSleepersMap;
 
 	std::unordered_set<Tile*> tilesToClean;
 
@@ -547,6 +589,14 @@ private:
 	uint32_t lastStageLevel = 0;
 	bool stagesEnabled = false;
 	bool useLastStageLevel = false;
+
+	// Mutexes for thread-safe creature processing
+	mutable std::mutex playerMutex;
+	std::mutex monsterMutex;
+	std::mutex npcMutex;
+
+	// These containers are used to maintain the order in which the objects were added to the map
+	// Used for creating spawn/login positions for n creatures if there are less spawn/login positions than creatures
 };
 
 #endif

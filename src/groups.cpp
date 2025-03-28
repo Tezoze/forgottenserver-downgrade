@@ -5,7 +5,6 @@
 
 #include "groups.h"
 
-#include "pugicast.h"
 #include "tools.h"
 
 const std::unordered_map<std::string, PlayerFlags> ParsePlayerFlagMap = {
@@ -62,12 +61,12 @@ bool Groups::load()
 
 	for (auto& groupNode : doc.child("groups").children()) {
 		Group group;
-		group.id = pugi::cast<uint16_t>(groupNode.attribute("id").value());
+		group.id = fs::xml_parse<uint16_t>(groupNode.attribute("id").value());
 		group.name = groupNode.attribute("name").as_string();
 		group.access = groupNode.attribute("access").as_bool();
-		group.maxDepotItems = pugi::cast<uint32_t>(groupNode.attribute("maxdepotitems").value());
-		group.maxVipEntries = pugi::cast<uint32_t>(groupNode.attribute("maxvipentries").value());
-		group.flags = pugi::cast<uint64_t>(groupNode.attribute("flags").value());
+		group.maxDepotItems = fs::xml_parse<uint32_t>(groupNode.attribute("maxdepotitems").value());
+		group.maxVipEntries = fs::xml_parse<uint32_t>(groupNode.attribute("maxvipentries").value());
+		group.flags = fs::xml_parse<uint64_t>(groupNode.attribute("flags").value());
 		if (pugi::xml_node node = groupNode.child("flags")) {
 			for (auto& flagNode : node.children()) {
 				pugi::xml_attribute attr = flagNode.first_attribute();

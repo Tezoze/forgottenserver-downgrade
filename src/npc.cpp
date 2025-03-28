@@ -6,7 +6,6 @@
 #include "npc.h"
 
 #include "game.h"
-#include "pugicast.h"
 
 extern Game g_game;
 extern LuaEnvironment g_luaEnvironment;
@@ -15,7 +14,7 @@ uint32_t Npc::npcAutoID = 0x80000000;
 
 void Npcs::reload()
 {
-	const std::map<uint32_t, Npc*>& npcs = g_game.getNpcs();
+	const std::unordered_map<uint32_t, Npc*>& npcs = g_game.getNpcs();
 	for (const auto& it : npcs) {
 		it.second->closeAllShopWindows();
 	}
@@ -121,7 +120,7 @@ bool Npc::loadFromXml()
 
 	pugi::xml_attribute attr;
 	if ((attr = npcNode.attribute("speed"))) {
-		baseSpeed = pugi::cast<uint32_t>(attr.value());
+		baseSpeed = fs::xml_parse<uint32_t>(attr.value());
 	} else {
 		baseSpeed = 100;
 	}
@@ -131,11 +130,11 @@ bool Npc::loadFromXml()
 	}
 
 	if ((attr = npcNode.attribute("walkinterval"))) {
-		walkTicks = pugi::cast<uint32_t>(attr.value());
+		walkTicks = fs::xml_parse<uint32_t>(attr.value());
 	}
 
 	if ((attr = npcNode.attribute("walkradius"))) {
-		masterRadius = pugi::cast<int32_t>(attr.value());
+		masterRadius = fs::xml_parse<int32_t>(attr.value());
 	}
 
 	if ((attr = npcNode.attribute("ignoreheight"))) {
@@ -149,13 +148,13 @@ bool Npc::loadFromXml()
 	pugi::xml_node healthNode = npcNode.child("health");
 	if (healthNode) {
 		if ((attr = healthNode.attribute("now"))) {
-			health = pugi::cast<int32_t>(attr.value());
+			health = fs::xml_parse<int32_t>(attr.value());
 		} else {
 			health = 100;
 		}
 
 		if ((attr = healthNode.attribute("max"))) {
-			healthMax = pugi::cast<int32_t>(attr.value());
+			healthMax = fs::xml_parse<int32_t>(attr.value());
 		} else {
 			healthMax = 100;
 		}
@@ -171,14 +170,14 @@ bool Npc::loadFromXml()
 	if (lookNode) {
 		pugi::xml_attribute lookTypeAttribute = lookNode.attribute("type");
 		if (lookTypeAttribute) {
-			defaultOutfit.lookType = pugi::cast<uint16_t>(lookTypeAttribute.value());
-			defaultOutfit.lookHead = pugi::cast<uint16_t>(lookNode.attribute("head").value());
-			defaultOutfit.lookBody = pugi::cast<uint16_t>(lookNode.attribute("body").value());
-			defaultOutfit.lookLegs = pugi::cast<uint16_t>(lookNode.attribute("legs").value());
-			defaultOutfit.lookFeet = pugi::cast<uint16_t>(lookNode.attribute("feet").value());
-			defaultOutfit.lookAddons = pugi::cast<uint16_t>(lookNode.attribute("addons").value());
+			defaultOutfit.lookType = fs::xml_parse<uint16_t>(lookTypeAttribute.value());
+			defaultOutfit.lookHead = fs::xml_parse<uint16_t>(lookNode.attribute("head").value());
+			defaultOutfit.lookBody = fs::xml_parse<uint16_t>(lookNode.attribute("body").value());
+			defaultOutfit.lookLegs = fs::xml_parse<uint16_t>(lookNode.attribute("legs").value());
+			defaultOutfit.lookFeet = fs::xml_parse<uint16_t>(lookNode.attribute("feet").value());
+			defaultOutfit.lookAddons = fs::xml_parse<uint16_t>(lookNode.attribute("addons").value());
 		} else if ((attr = lookNode.attribute("typeex"))) {
-			defaultOutfit.lookTypeEx = pugi::cast<uint16_t>(attr.value());
+			defaultOutfit.lookTypeEx = fs::xml_parse<uint16_t>(attr.value());
 		}
 
 		currentOutfit = defaultOutfit;

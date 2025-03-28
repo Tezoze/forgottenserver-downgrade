@@ -19,6 +19,7 @@
 #include "vocation.h"
 
 #include <bitset>
+#include <boost/algorithm/string.hpp>
 
 class House;
 class NetworkMessage;
@@ -76,7 +77,7 @@ struct Skill
 	uint16_t percent = 0;
 };
 
-using MuteCountMap = std::map<uint32_t, uint32_t>;
+using MuteCountMap = std::unordered_map<uint32_t, uint32_t>;
 
 inline constexpr int32_t PLAYER_MAX_SPEED = 1500;
 inline constexpr int32_t PLAYER_MIN_SPEED = 10;
@@ -87,6 +88,62 @@ inline constexpr auto ACCOUNT_MANAGER_PLAYER_ID = 1;
 inline constexpr auto ACCOUNT_MANAGER_ACCOUNT_ID = 1;
 inline constexpr auto ACCOUNT_MANAGER_ACCOUNT_NAME = "1";
 inline constexpr auto ACCOUNT_MANAGER_ACCOUNT_PASSWORD = "1";
+
+// Define the Update struct for batched network updates
+struct Update {
+	enum Type { MAGIC_EFFECT, HEALTH, ANIMATED_TEXT /* add other types as needed */ };
+	Type type;
+	Position pos;
+	union {
+		uint8_t effect;           // For MAGIC_EFFECT
+		int32_t health;           // For HEALTH
+		struct {
+			std::string text;
+			TextColor_t color;
+		} textData;               // For ANIMATED_TEXT
+	};
+	
+	Update() : type(HEALTH), pos{}, health(0) {}
+	~Update() { 
+		if (type == ANIMATED_TEXT) {
+			textData.text.~basic_string();  // Properly destruct the string without naming the type
+		}
+	}
+	
+	// Move constructor for efficient vector operations
+	Update(Update&& other) noexcept : type(other.type), pos(other.pos) {
+		switch (type) {
+			case MAGIC_EFFECT: effect = other.effect; break;
+			case HEALTH: health = other.health; break;
+			case ANIMATED_TEXT:
+				new(&textData.text) std::string(std::move(other.textData.text));
+				textData.color = other.textData.color;
+				break;
+		}
+	}
+	
+	// Move assignment operator
+	Update& operator=(Update&& other) noexcept {
+		if (this != &other) {
+			this->~Update();
+			type = other.type;
+			pos = other.pos;
+			switch (type) {
+				case MAGIC_EFFECT: effect = other.effect; break;
+				case HEALTH: health = other.health; break;
+				case ANIMATED_TEXT:
+					new(&textData.text) std::string(std::move(other.textData.text));
+					textData.color = other.textData.color;
+					break;
+			}
+		}
+		return *this;
+	}
+	
+	// Deleted copy constructor and assignment operator
+	Update(const Update&) = delete;
+	Update& operator=(const Update&) = delete;
+};
 
 class Player final : public Creature, public Cylinder
 {
@@ -111,9 +168,14 @@ public:
 	static MuteCountMap muteCountMap;
 
 	const std::string& getName() const override { return name; }
-	void setName(std::string_view name) { this->name = name; }
+	void setName(std::string_view name) { 
+		this->name = name; 
+		this->lowercaseName = boost::algorithm::to_lower_copy<std::string>(this->name);
+	}
 	const std::string& getNameDescription() const override { return name; }
 	std::string getDescription(int32_t lookDistance) const override;
+
+	const std::string& getLowercaseName() const { return lowercaseName; }
 
 	CreatureType_t getType() const override { return CREATURETYPE_PLAYER; }
 
@@ -976,6 +1038,11 @@ public:
 
 	static uint32_t playerAutoID;
 
+	// Methods for batched network updates
+	std::vector<Update> pendingUpdates;
+	void sendPendingUpdates();
+	void clearPendingUpdates() { pendingUpdates.clear(); }
+
 private:
 	std::forward_list<Condition*> getMuteConditions() const;
 
@@ -1023,9 +1090,9 @@ private:
 	std::unordered_set<uint32_t> attackedSet;
 	std::unordered_set<uint32_t> VIPList;
 
-	std::map<uint8_t, OpenContainer> openContainers;
-	std::map<uint32_t, DepotLocker_ptr> depotLockerMap;
-	std::map<uint32_t, DepotChest*> depotChests;
+	std::unordered_map<uint8_t, OpenContainer> openContainers;
+	std::unordered_map<uint32_t, DepotLocker_ptr> depotLockerMap;
+	std::unordered_map<uint32_t, DepotChest*> depotChests;
 
 	std::unordered_map<uint16_t, uint8_t> outfits;
 	std::unordered_set<uint16_t> mounts;
@@ -1042,6 +1109,9 @@ private:
 
 	std::string name;
 	std::string guildNick;
+	std::string lowercaseName;
+	std::string nameDescription;
+	std::string specialDescription;
 
 	Skill skills[SKILL_LAST + 1];
 	LightInfo itemsLight;

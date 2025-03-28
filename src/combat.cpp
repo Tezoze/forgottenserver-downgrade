@@ -611,7 +611,7 @@ void Combat::combatTileEffects(const SpectatorVec& spectators, Creature* caster,
 	}
 
 	if (params.impactEffect != CONST_ME_NONE) {
-		Game::addMagicEffect(spectators, tile->getPosition(), params.impactEffect);
+		g_game.addMagicEffect(spectators, tile->getPosition(), params.impactEffect);
 	}
 }
 
@@ -809,20 +809,8 @@ void Combat::doTargetCombat(Creature* caster, Creature* target, CombatDamage& da
 
 		if (casterPlayer) {
 			Player* targetPlayer = target ? target->getPlayer() : nullptr;
-			if (targetPlayer && casterPlayer != targetPlayer && targetPlayer->getSkull() != SKULL_BLACK &&
-			    damage.primary.type != COMBAT_HEALING) {
-				damage.primary.value /= 2;
-				damage.secondary.value /= 2;
-			}
-
-			if (!damage.critical && damage.primary.type != COMBAT_HEALING && damage.origin != ORIGIN_CONDITION) {
-				uint16_t chance = casterPlayer->getSpecialSkill(SPECIALSKILL_CRITICALHITCHANCE);
-				uint16_t skill = casterPlayer->getSpecialSkill(SPECIALSKILL_CRITICALHITAMOUNT);
-				if (chance > 0 && skill > 0 && normal_random(1, 100) <= chance) {
-					damage.primary.value += std::round(damage.primary.value * (skill / 100.));
-					damage.secondary.value += std::round(damage.secondary.value * (skill / 100.));
-					damage.critical = true;
-				}
+			if (targetPlayer && casterPlayer != targetPlayer && damage.primary.type != COMBAT_HEALING) {
+				// No reduction here; rely on Lua
 			}
 		}
 
@@ -839,42 +827,7 @@ void Combat::doTargetCombat(Creature* caster, Creature* target, CombatDamage& da
 					if (caster) {
 						conditionCopy->setParam(CONDITION_PARAM_OWNER, caster->getID());
 					}
-
-					// TODO: infight condition until all aggressive conditions has ended
 					target->addCombatCondition(conditionCopy);
-				}
-			}
-		}
-
-		if (damage.critical && target) {
-			g_game.addMagicEffect(target->getPosition(), CONST_ME_BLOODYSTEPS);
-		}
-
-		if (!damage.leeched && damage.primary.type != COMBAT_HEALING && casterPlayer &&
-		    damage.origin != ORIGIN_CONDITION) {
-			CombatDamage leechCombat;
-			leechCombat.origin = ORIGIN_NONE;
-			leechCombat.leeched = true;
-
-			int32_t totalDamage = std::abs(damage.primary.value + damage.secondary.value);
-
-			if (casterPlayer->getHealth() < casterPlayer->getMaxHealth()) {
-				uint16_t chance = casterPlayer->getSpecialSkill(SPECIALSKILL_LIFELEECHCHANCE);
-				uint16_t skill = casterPlayer->getSpecialSkill(SPECIALSKILL_LIFELEECHAMOUNT);
-				if (chance > 0 && skill > 0 && normal_random(1, 100) <= chance) {
-					leechCombat.primary.value = std::round(totalDamage * (skill / 100.));
-					g_game.combatChangeHealth(nullptr, casterPlayer, leechCombat);
-					casterPlayer->sendMagicEffect(casterPlayer->getPosition(), CONST_ME_MAGIC_RED);
-				}
-			}
-
-			if (casterPlayer->getMana() < casterPlayer->getMaxMana()) {
-				uint16_t chance = casterPlayer->getSpecialSkill(SPECIALSKILL_MANALEECHCHANCE);
-				uint16_t skill = casterPlayer->getSpecialSkill(SPECIALSKILL_MANALEECHAMOUNT);
-				if (chance > 0 && skill > 0 && normal_random(1, 100) <= chance) {
-					leechCombat.primary.value = std::round(totalDamage * (skill / 100.));
-					g_game.combatChangeMana(nullptr, casterPlayer, leechCombat);
-					casterPlayer->sendMagicEffect(casterPlayer->getPosition(), CONST_ME_MAGIC_BLUE);
 				}
 			}
 		}
@@ -898,26 +851,16 @@ void Combat::doAreaCombat(Creature* caster, const Position& position, const Area
 	    caster ? getCombatArea(caster->getPosition(), position, area) : getCombatArea(position, position, area);
 
 	Player* casterPlayer = caster ? caster->getPlayer() : nullptr;
-	int32_t criticalPrimary = 0;
-	int32_t criticalSecondary = 0;
-	if (!damage.critical && damage.primary.type != COMBAT_HEALING && casterPlayer &&
-	    damage.origin != ORIGIN_CONDITION) {
-		uint16_t chance = casterPlayer->getSpecialSkill(SPECIALSKILL_CRITICALHITCHANCE);
-		uint16_t skill = casterPlayer->getSpecialSkill(SPECIALSKILL_CRITICALHITAMOUNT);
-		if (chance > 0 && skill > 0 && uniform_random(1, 100) <= chance) {
-			criticalPrimary = std::round(damage.primary.value * (skill / 100.));
-			criticalSecondary = std::round(damage.secondary.value * (skill / 100.));
-			damage.critical = true;
-		}
-	}
 
-	int32_t maxX = 0;
-	int32_t maxY = 0;
+	// Remove critical hit logic
+	// int32_t criticalPrimary = 0;
+	// int32_t criticalSecondary = 0;
+	// if (!damage.critical && damage.primary.type != COMBAT_HEALING && casterPlayer &&
+	//     damage.origin != ORIGIN_CONDITION) { ... }
 
-	// calculate the max viewable range
+	int32_t maxX = 0, maxY = 0;
 	for (Tile* tile : tiles) {
 		const Position& tilePos = tile->getPosition();
-
 		maxX = std::max(maxX, tilePos.getDistanceX(position));
 		maxY = std::max(maxY, tilePos.getDistanceY(position));
 	}
@@ -956,7 +899,6 @@ void Combat::doAreaCombat(Creature* caster, const Position& position, const Area
 				if (!params.aggressive ||
 				    (caster != creature && Combat::canDoCombat(caster, creature) == RETURNVALUE_NOERROR)) {
 					toDamageCreatures.push_back(creature);
-
 					if (params.targetCasterOrTopMost) {
 						break;
 					}
@@ -965,13 +907,8 @@ void Combat::doAreaCombat(Creature* caster, const Position& position, const Area
 		}
 	}
 
-	CombatDamage leechCombat;
-	leechCombat.origin = ORIGIN_NONE;
-	leechCombat.leeched = true;
-
 	for (Creature* creature : toDamageCreatures) {
-		CombatDamage damageCopy = damage; // we cannot avoid copying here, because we don't know if it's player combat
-		                                  // or not, so we can't modify the initial damage.
+		CombatDamage damageCopy = damage;
 		bool playerCombatReduced = false;
 		if ((damageCopy.primary.value < 0 || damageCopy.secondary.value < 0) && caster) {
 			Player* targetPlayer = creature->getPlayer();
@@ -983,11 +920,12 @@ void Combat::doAreaCombat(Creature* caster, const Position& position, const Area
 			}
 		}
 
-		if (damageCopy.critical) {
-			damageCopy.primary.value += playerCombatReduced ? criticalPrimary / 2 : criticalPrimary;
-			damageCopy.secondary.value += playerCombatReduced ? criticalSecondary / 2 : criticalSecondary;
-			g_game.addMagicEffect(creature->getPosition(), CONST_ME_BLOODYSTEPS);
-		}
+		// Remove critical effect
+		// if (damageCopy.critical) {
+		//     damageCopy.primary.value += playerCombatReduced ? criticalPrimary / 2 : criticalPrimary;
+		//     damageCopy.secondary.value += playerCombatReduced ? criticalSecondary / 2 : criticalSecondary;
+		//     g_game.addMagicEffect(creature->getPosition(), CONST_ME_BLOODYSTEPS);
+		// }
 
 		bool success = false;
 		if (damageCopy.primary.type != COMBAT_MANADRAIN) {
@@ -1008,43 +946,14 @@ void Combat::doAreaCombat(Creature* caster, const Position& position, const Area
 						if (caster) {
 							conditionCopy->setParam(CONDITION_PARAM_OWNER, caster->getID());
 						}
-
-						// TODO: infight condition until all aggressive conditions has ended
 						creature->addCombatCondition(conditionCopy);
 					}
 				}
 			}
 
-			int32_t totalDamage = std::abs(damageCopy.primary.value + damageCopy.secondary.value);
-
-			if (casterPlayer && !damage.leeched && damage.primary.type != COMBAT_HEALING &&
-			    damage.origin != ORIGIN_CONDITION) {
-				int32_t targetsCount = toDamageCreatures.size();
-
-				if (casterPlayer->getHealth() < casterPlayer->getMaxHealth()) {
-					uint16_t chance = casterPlayer->getSpecialSkill(SPECIALSKILL_LIFELEECHCHANCE);
-					uint16_t skill = casterPlayer->getSpecialSkill(SPECIALSKILL_LIFELEECHAMOUNT);
-					if (chance > 0 && skill > 0 && normal_random(1, 100) <= chance) {
-						leechCombat.primary.value =
-						    std::ceil(totalDamage * ((skill / 100.) + ((targetsCount - 1) * ((skill / 100.) / 10.))) /
-						              targetsCount);
-						g_game.combatChangeHealth(nullptr, casterPlayer, leechCombat);
-						casterPlayer->sendMagicEffect(casterPlayer->getPosition(), CONST_ME_MAGIC_RED);
-					}
-				}
-
-				if (casterPlayer->getMana() < casterPlayer->getMaxMana()) {
-					uint16_t chance = casterPlayer->getSpecialSkill(SPECIALSKILL_MANALEECHCHANCE);
-					uint16_t skill = casterPlayer->getSpecialSkill(SPECIALSKILL_MANALEECHAMOUNT);
-					if (chance > 0 && skill > 0 && normal_random(1, 100) <= chance) {
-						leechCombat.primary.value =
-						    std::ceil(totalDamage * ((skill / 100.) + ((targetsCount - 1) * ((skill / 100.) / 10.))) /
-						              targetsCount);
-						g_game.combatChangeMana(nullptr, casterPlayer, leechCombat);
-						casterPlayer->sendMagicEffect(casterPlayer->getPosition(), CONST_ME_MAGIC_BLUE);
-					}
-				}
-			}
+			// Remove leech logic
+			// if (casterPlayer && !damage.leeched && damage.primary.type != COMBAT_HEALING &&
+			//     damage.origin != ORIGIN_CONDITION) { ... }
 
 			if (params.dispelType == CONDITION_PARALYZE) {
 				creature->removeCondition(CONDITION_PARALYZE);

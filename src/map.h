@@ -9,11 +9,29 @@
 #include "house.h"
 #include "position.h"
 #include "spawn.h"
+#include "spectators.h"
 #include "town.h"
 
 class Creature;
+class Player;
 
 inline constexpr int32_t MAP_MAX_LAYERS = 16;
+
+// Map layer limits
+inline constexpr int32_t MAP_LAYER_VIEW_LIMIT = 7;
+inline constexpr int32_t MAP_LAYER_LOWER_LIMIT = 0;
+inline constexpr int32_t MAP_LAYER_UPPER_LIMIT = 15;
+
+// Grid size for spatial partitioning (32x32 tiles per grid cell)
+inline constexpr int32_t GRID_SIZE = 32;
+
+// Add grid-based spatial partitioning
+struct pair_hash {
+	template <class T1, class T2>
+	std::size_t operator()(const std::pair<T1, T2>& p) const {
+		return std::hash<T1>{}(p.first) ^ std::hash<T2>{}(p.second);
+	}
+};
 
 struct FindPathParams;
 struct AStarNode
@@ -51,7 +69,21 @@ private:
 	int_fast32_t closedNodes;
 };
 
-using SpectatorCache = std::map<Position, SpectatorVec>;
+// Position hash function for unordered_map
+namespace std {
+	template<>
+	struct hash<Position> {
+		std::size_t operator()(const Position& pos) const {
+			// Combine the hash of the coordinates
+			std::size_t h1 = std::hash<int32_t>{}(pos.x);
+			std::size_t h2 = std::hash<int32_t>{}(pos.y);
+			std::size_t h3 = std::hash<int32_t>{}(pos.z);
+			return h1 ^ (h2 << 1) ^ (h3 << 2);
+		}
+	};
+}
+
+using SpectatorCache = std::unordered_map<Position, SpectatorVec>;
 
 inline constexpr int32_t FLOOR_BITS = 3;
 inline constexpr int32_t FLOOR_SIZE = (1 << FLOOR_BITS);
@@ -157,6 +189,9 @@ public:
 	static constexpr int32_t maxClientViewportX = 8;
 	static constexpr int32_t maxClientViewportY = 6;
 
+	static constexpr int32_t GRID_SIZE = 32; // Adjust based on map size and player density
+	void updatePlayerRegion(Player* player, const Position& oldPos, const Position& newPos);
+
 	uint32_t clean() const;
 
 	/**
@@ -209,6 +244,30 @@ public:
 
 	void clearSpectatorCache();
 	void clearPlayersSpectatorCache();
+	void clearPlayerGrid() { playerGrid.clear(); }
+	SpectatorCache& getSpectatorCache();
+
+	// Debug function to get grid statistics
+	std::string getGridStats() const {
+		size_t totalPlayers = 0;
+		size_t emptyRegions = 0;
+		size_t maxPlayersInRegion = 0;
+		
+		for (const auto& [region, players] : playerGrid) {
+			totalPlayers += players.size();
+			if (players.empty()) {
+				emptyRegions++;
+			}
+			maxPlayersInRegion = std::max(maxPlayersInRegion, players.size());
+		}
+		
+		std::stringstream ss;
+		ss << "Grid stats: " << playerGrid.size() << " regions, "
+		   << totalPlayers << " players, "
+		   << emptyRegions << " empty regions, "
+		   << "max " << maxPlayersInRegion << " players in a region";
+		return ss.str();
+	}
 
 	/**
 	 * Checks if you can throw an object to that position
@@ -246,7 +305,7 @@ public:
 	bool getPathMatching(const Creature& creature, std::vector<Direction>& dirList,
 	                     const FrozenPathingConditionCall& pathCondition, const FindPathParams& fpp) const;
 
-	std::map<std::string, Position> waypoints;
+	std::unordered_map<std::string, Position> waypoints;
 
 	QTreeLeafNode* getQTNode(uint16_t x, uint16_t y)
 	{
@@ -256,6 +315,10 @@ public:
 	Spawns spawns;
 	Towns towns;
 	Houses houses;
+
+	void getSpectatorsInternal(SpectatorVec& spectators, const Position& centerPos, int32_t minRangeX,
+	                           int32_t maxRangeX, int32_t minRangeY, int32_t maxRangeY, int32_t minRangeZ,
+	                           int32_t maxRangeZ, bool onlyPlayers = false) const;
 
 private:
 	SpectatorCache spectatorCache;
@@ -269,10 +332,8 @@ private:
 	uint32_t width = 0;
 	uint32_t height = 0;
 
-	// Actually scans the map for spectators
-	void getSpectatorsInternal(SpectatorVec& spectators, const Position& centerPos, int32_t minRangeX,
-	                           int32_t maxRangeX, int32_t minRangeY, int32_t maxRangeY, int32_t minRangeZ,
-	                           int32_t maxRangeZ, bool onlyPlayers) const;
+	// Grid-based spatial partitioning for players
+	std::unordered_map<std::pair<int32_t, int32_t>, std::vector<Player*>, pair_hash> playerGrid;
 
 	friend class Game;
 	friend class IOMap;

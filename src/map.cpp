@@ -251,6 +251,13 @@ bool Map::placeCreature(const Position& centerPos, Creature* creature, bool exte
 
 	const Position& dest = toCylinder->getPosition();
 	getQTNode(dest.x, dest.y)->addCreature(creature);
+	
+	// Add player to grid for spatial partitioning
+	if (Player* player = creature->getPlayer()) {
+		auto region = std::make_pair(dest.x / GRID_SIZE, dest.y / GRID_SIZE);
+		playerGrid[region].push_back(player);
+	}
+	
 	return true;
 }
 
@@ -292,8 +299,17 @@ void Map::moveCreature(Creature& creature, Tile& newTile, bool forceTeleport /* 
 
 	// Switch the node ownership
 	if (leaf != new_leaf) {
+		if (creature.getPlayer()) {
+			g_game.updatePlayerHelpers(*creature.getPlayer());
+		}
+
 		leaf->removeCreature(&creature);
 		new_leaf->addCreature(&creature);
+	}
+
+	// Update grid for player movement
+	if (Player* player = creature.getPlayer()) {
+		updatePlayerRegion(player, oldPos, newPos);
 	}
 
 	// add the creature
@@ -336,160 +352,210 @@ void Map::moveCreature(Creature& creature, Tile& newTile, bool forceTeleport /* 
 }
 
 void Map::getSpectatorsInternal(SpectatorVec& spectators, const Position& centerPos, int32_t minRangeX,
-                                int32_t maxRangeX, int32_t minRangeY, int32_t maxRangeY, int32_t minRangeZ,
-                                int32_t maxRangeZ, bool onlyPlayers) const
+                                 int32_t maxRangeX, int32_t minRangeY, int32_t maxRangeY, int32_t minRangeZ,
+                                 int32_t maxRangeZ, bool onlyPlayers) const
 {
-	auto min_y = centerPos.y + minRangeY;
-	auto min_x = centerPos.x + minRangeX;
-	auto max_y = centerPos.y + maxRangeY;
-	auto max_x = centerPos.x + maxRangeX;
+    // If we're only looking for players, use the optimized grid-based approach
+    if (onlyPlayers) {
+        // Calculate the grid coordinates for the center position
+        int32_t centerGridX = centerPos.x / GRID_SIZE;
+        int32_t centerGridY = centerPos.y / GRID_SIZE;
+        
+        // Calculate how many grid cells we need to check in each direction
+        // Add 1 to account for potential overlap at grid boundaries
+        int32_t gridRangeX = ((maxRangeX + GRID_SIZE - 1) / GRID_SIZE) + 1;
+        int32_t gridRangeY = ((maxRangeY + GRID_SIZE - 1) / GRID_SIZE) + 1;
+        
+        // Check all grid cells that might contain spectators
+        for (int32_t gridY = centerGridY - gridRangeY; gridY <= centerGridY + gridRangeY; ++gridY) {
+            for (int32_t gridX = centerGridX - gridRangeX; gridX <= centerGridX + gridRangeX; ++gridX) {
+                auto gridPos = std::make_pair(gridX, gridY);
+                auto it = playerGrid.find(gridPos);
+                if (it == playerGrid.end()) {
+                    continue;
+                }
+                
+                // Check each player in this grid cell
+                for (Player* player : it->second) {
+                    const Position& playerPos = player->getPosition();
+                    
+                    // Check if player is within the vertical range
+                    if (playerPos.z < minRangeZ || playerPos.z > maxRangeZ) {
+                        continue;
+                    }
+                    
+                    // Check horizontal distance
+                    int32_t dx = std::abs(playerPos.x - centerPos.x);
+                    int32_t dy = std::abs(playerPos.y - centerPos.y);
+                    
+                    if (dx <= maxRangeX && dx >= minRangeX && dy <= maxRangeY && dy >= minRangeY) {
+                        // Player is in range, add to spectators
+                        spectators.emplace_back(player);
+                    }
+                }
+            }
+        }
+    } else {
+        // If we need all creatures, use the original implementation
+        auto min_y = centerPos.y + minRangeY;
+        auto min_x = centerPos.x + minRangeX;
+        auto max_y = centerPos.y + maxRangeY;
+        auto max_x = centerPos.x + maxRangeX;
 
-	int32_t minoffset = centerPos.getZ() - maxRangeZ;
-	uint16_t x1 = static_cast<uint16_t>(std::min<uint32_t>(0xFFFF, std::max<int32_t>(0, (min_x + minoffset))));
-	uint16_t y1 = static_cast<uint16_t>(std::min<uint32_t>(0xFFFF, std::max<int32_t>(0, (min_y + minoffset))));
+        int32_t minoffset = centerPos.getZ() - maxRangeZ;
+        uint16_t x1 = static_cast<uint16_t>(std::min<uint32_t>(0xFFFF, std::max<int32_t>(0, (min_x + minoffset))));
+        uint16_t y1 = static_cast<uint16_t>(std::min<uint32_t>(0xFFFF, std::max<int32_t>(0, (min_y + minoffset))));
 
-	int32_t maxoffset = centerPos.getZ() - minRangeZ;
-	uint16_t x2 = static_cast<uint16_t>(std::min<uint32_t>(0xFFFF, std::max<int32_t>(0, (max_x + maxoffset))));
-	uint16_t y2 = static_cast<uint16_t>(std::min<uint32_t>(0xFFFF, std::max<int32_t>(0, (max_y + maxoffset))));
+        int32_t maxoffset = centerPos.getZ() - minRangeZ;
+        uint16_t x2 = static_cast<uint16_t>(std::min<uint32_t>(0xFFFF, std::max<int32_t>(0, (max_x + maxoffset))));
+        uint16_t y2 = static_cast<uint16_t>(std::min<uint32_t>(0xFFFF, std::max<int32_t>(0, (max_y + maxoffset))));
 
-	int32_t startx1 = x1 - (x1 % FLOOR_SIZE);
-	int32_t starty1 = y1 - (y1 % FLOOR_SIZE);
-	int32_t endx2 = x2 - (x2 % FLOOR_SIZE);
-	int32_t endy2 = y2 - (y2 % FLOOR_SIZE);
+        int32_t startx1 = x1 - (x1 % FLOOR_SIZE);
+        int32_t starty1 = y1 - (y1 % FLOOR_SIZE);
+        int32_t endx2 = x2 - (x2 % FLOOR_SIZE);
+        int32_t endy2 = y2 - (y2 % FLOOR_SIZE);
 
-	const QTreeLeafNode* startLeaf =
-	    QTreeNode::getLeafStatic<const QTreeLeafNode*, const QTreeNode*>(&root, startx1, starty1);
-	const QTreeLeafNode* leafS = startLeaf;
-	const QTreeLeafNode* leafE;
+        const QTreeLeafNode* startLeaf =
+            QTreeNode::getLeafStatic<const QTreeLeafNode*, const QTreeNode*>(&root, startx1, starty1);
+        const QTreeLeafNode* leafS = startLeaf;
+        const QTreeLeafNode* leafE;
 
-	for (int_fast32_t ny = starty1; ny <= endy2; ny += FLOOR_SIZE) {
-		leafE = leafS;
-		for (int_fast32_t nx = startx1; nx <= endx2; nx += FLOOR_SIZE) {
-			if (leafE) {
-				const CreatureVector& node_list = (onlyPlayers ? leafE->player_list : leafE->creature_list);
-				for (Creature* creature : node_list) {
-					const Position& cpos = creature->getPosition();
-					if (minRangeZ > cpos.z || maxRangeZ < cpos.z) {
-						continue;
-					}
+        for (int32_t ny = starty1; ny <= endy2; ny += FLOOR_SIZE) {
+            leafE = leafS;
+            for (int32_t nx = startx1; nx <= endx2; nx += FLOOR_SIZE) {
+                if (leafE) {
+                    const CreatureVector& node_list = onlyPlayers ? leafE->player_list : leafE->creature_list;
+                    for (Creature* creature : node_list) {
+                        const Position& cpos = creature->getPosition();
 
-					int16_t offsetZ = centerPos.getOffsetZ(cpos);
-					if ((min_y + offsetZ) > cpos.y || (max_y + offsetZ) < cpos.y || (min_x + offsetZ) > cpos.x ||
-					    (max_x + offsetZ) < cpos.x) {
-						continue;
-					}
+                        if (cpos.z < minRangeZ || cpos.z > maxRangeZ) {
+                            continue;
+                        }
 
-					spectators.emplace_back(creature);
-				}
-				leafE = leafE->leafE;
-			} else {
-				leafE = QTreeNode::getLeafStatic<const QTreeLeafNode*, const QTreeNode*>(&root, nx + FLOOR_SIZE, ny);
-			}
-		}
+                        int32_t offsetZ = centerPos.getZ() - cpos.z;
+                        if ((min_y + offsetZ) > cpos.y || (max_y + offsetZ) < cpos.y ||
+                            (min_x + offsetZ) > cpos.x || (max_x + offsetZ) < cpos.x) {
+                            continue;
+                        }
 
-		if (leafS) {
-			leafS = leafS->leafS;
-		} else {
-			leafS = QTreeNode::getLeafStatic<const QTreeLeafNode*, const QTreeNode*>(&root, startx1, ny + FLOOR_SIZE);
-		}
-	}
+                        spectators.emplace_back(creature);
+                    }
+                    leafE = leafE->leafE;
+                } else {
+                    leafE = QTreeNode::getLeafStatic<const QTreeLeafNode*, const QTreeNode*>(&root, nx + FLOOR_SIZE, ny);
+                }
+            }
+
+            if (leafS) {
+                leafS = leafS->leafS;
+            } else {
+                leafS = QTreeNode::getLeafStatic<const QTreeLeafNode*, const QTreeNode*>(&root, startx1, ny + FLOOR_SIZE);
+            }
+        }
+    }
 }
 
 void Map::getSpectators(SpectatorVec& spectators, const Position& centerPos, bool multifloor /*= false*/,
                         bool onlyPlayers /*= false*/, int32_t minRangeX /*= 0*/, int32_t maxRangeX /*= 0*/,
                         int32_t minRangeY /*= 0*/, int32_t maxRangeY /*= 0*/)
 {
-	if (centerPos.z >= MAP_MAX_LAYERS) {
-		return;
-	}
+    if (centerPos.z >= MAP_MAX_LAYERS) {
+        return;
+    }
 
-	bool foundCache = false;
-	bool cacheResult = false;
+    // Initialize min/max ranges with defaults if not specified
+    minRangeX = (minRangeX == 0 ? -maxViewportX : -minRangeX);
+    maxRangeX = (maxRangeX == 0 ? maxViewportX : maxRangeX);
+    minRangeY = (minRangeY == 0 ? -maxViewportY : -minRangeY);
+    maxRangeY = (maxRangeY == 0 ? maxViewportY : maxRangeY);
 
-	minRangeX = (minRangeX == 0 ? -maxViewportX : -minRangeX);
-	maxRangeX = (maxRangeX == 0 ? maxViewportX : maxRangeX);
-	minRangeY = (minRangeY == 0 ? -maxViewportY : -minRangeY);
-	maxRangeY = (maxRangeY == 0 ? maxViewportY : maxRangeY);
+    spectators.clear();
 
-	if (minRangeX == -maxViewportX && maxRangeX == maxViewportX && minRangeY == -maxViewportY &&
-	    maxRangeY == maxViewportY && multifloor) {
-		if (onlyPlayers) {
-			if (playersSpectatorCache.contains(centerPos)) {
-				if (!spectators.empty()) {
-					spectators.addSpectators(playersSpectatorCache[centerPos]);
-				} else {
-					spectators = playersSpectatorCache[centerPos];
-				}
+    if (onlyPlayers) {
+        // Use grid-based approach for player-only spectator queries
+        int32_t centerX = centerPos.x / GRID_SIZE;
+        int32_t centerY = centerPos.y / GRID_SIZE;
+        
+        // Search in a 3x3 grid around the center position
+        for (int32_t dx = -1; dx <= 1; ++dx) {
+            for (int32_t dy = -1; dy <= 1; ++dy) {
+                auto region = std::make_pair(centerX + dx, centerY + dy);
+                auto it = playerGrid.find(region);
+                if (it == playerGrid.end()) continue;
+                
+                // Check each player in this grid region
+                for (Player* player : it->second) {
+                    const Position& pos = player->getPosition();
+                    if ((!multifloor && pos.z != centerPos.z) || (onlyPlayers && !player)) continue;
+                    
+                    // Calculate the distance from the center position
+                    int32_t dx = centerPos.x - pos.x;
+                    int32_t dy = centerPos.y - pos.y;
+                    
+                    // Check if the player is within the specified range
+                    if (dx >= minRangeX && dx <= maxRangeX && dy >= minRangeY && dy <= maxRangeY) {
+                        spectators.push_back(player);
+                    }
+                }
+            }
+        }
+        return;
+    }
 
-				foundCache = true;
-			}
-		}
+    // Fall back to standard approach for mixed creatures
+    SpectatorCache& cache = getSpectatorCache();
+    
+    // Modified this section since SpectatorCache is now an unordered_map not a class with enabled/players/creatures members
+    if (!onlyPlayers && minRangeX == -maxViewportX && maxRangeX == maxViewportX &&
+        minRangeY == -maxViewportY && maxRangeY == maxViewportY && multifloor) {
+        // Check if we have a cached result for this position
+        auto it = cache.find(centerPos);
+        if (it != cache.end() && centerPos.z >= MAP_LAYER_LOWER_LIMIT && centerPos.z <= MAP_LAYER_UPPER_LIMIT) {
+            // Use cached spectators
+            spectators = it->second;
+            // Remove from cache after using
+            cache.erase(it);
+            return;
+        }
+    }
 
-		if (!foundCache) {
-			if (spectatorCache.contains(centerPos)) {
-				if (!onlyPlayers) {
-					if (!spectators.empty()) {
-						const SpectatorVec& cachedSpectators = spectatorCache[centerPos];
-						spectators.addSpectators(cachedSpectators);
-					} else {
-						spectators = spectatorCache[centerPos];
-					}
-				} else {
-					const SpectatorVec& cachedSpectators = spectatorCache[centerPos];
-					for (Creature* spectator : cachedSpectators) {
-						if (spectator->getPlayer()) {
-							spectators.emplace_back(spectator);
-						}
-					}
-				}
+    int32_t minRangeZ;
+    int32_t maxRangeZ;
 
-				foundCache = true;
-			} else {
-				cacheResult = true;
-			}
-		}
-	}
+    if (multifloor) {
+        if (centerPos.z > MAP_LAYER_VIEW_LIMIT) {
+            minRangeZ = centerPos.z;
+        } else if (centerPos.z == MAP_LAYER_VIEW_LIMIT) {
+            minRangeZ = centerPos.z;
+            maxRangeZ = centerPos.z + 1;
+        } else if (centerPos.z == MAP_LAYER_VIEW_LIMIT - 1) {
+            minRangeZ = centerPos.z - 1;
+            maxRangeZ = centerPos.z + 2;
+        } else if (centerPos.z == MAP_LAYER_VIEW_LIMIT - 2) {
+            minRangeZ = centerPos.z - 2;
+            maxRangeZ = centerPos.z + 3;
+        } else {
+            minRangeZ = centerPos.z - 3;
+            maxRangeZ = centerPos.z + 4;
+        }
+    } else {
+        minRangeZ = centerPos.z;
+        maxRangeZ = centerPos.z;
+    }
 
-	if (!foundCache) {
-		int32_t minRangeZ;
-		int32_t maxRangeZ;
-
-		if (multifloor) {
-			if (centerPos.z > 7) {
-				// underground (8->15)
-				minRangeZ = std::max(centerPos.getZ() - 2, 0);
-				maxRangeZ = std::min(centerPos.getZ() + 2, MAP_MAX_LAYERS - 1);
-			} else if (centerPos.z == 6) {
-				minRangeZ = 0;
-				maxRangeZ = 8;
-			} else if (centerPos.z == 7) {
-				minRangeZ = 0;
-				maxRangeZ = 9;
-			} else {
-				minRangeZ = 0;
-				maxRangeZ = 7;
-			}
-		} else {
-			minRangeZ = centerPos.z;
-			maxRangeZ = centerPos.z;
-		}
-
-		getSpectatorsInternal(spectators, centerPos, minRangeX, maxRangeX, minRangeY, maxRangeY, minRangeZ, maxRangeZ,
-		                      onlyPlayers);
-
-		if (cacheResult) {
-			if (onlyPlayers) {
-				playersSpectatorCache[centerPos] = spectators;
-			} else {
-				spectatorCache[centerPos] = spectators;
-			}
-		}
-	}
+    getSpectatorsInternal(spectators, centerPos, minRangeX, maxRangeX, minRangeY, maxRangeY, minRangeZ, maxRangeZ,
+                         onlyPlayers);
 }
 
-void Map::clearSpectatorCache() { spectatorCache.clear(); }
+void Map::clearSpectatorCache()
+{
+    spectatorCache.clear();
+}
 
-void Map::clearPlayersSpectatorCache() { playersSpectatorCache.clear(); }
+void Map::clearPlayersSpectatorCache()
+{
+    playersSpectatorCache.clear();
+}
 
 bool Map::canThrowObjectTo(const Position& fromPos, const Position& toPos, bool checkLineOfSight /*= true*/,
                            bool sameFloor /*= false*/, int32_t rangex /*= Map::maxClientViewportX*/,
@@ -1073,4 +1139,32 @@ uint32_t Map::clean() const
 	std::cout << "> CLEAN: Removed " << count << " item" << (count != 1 ? "s" : "") << " from " << tiles << " tile"
 	          << (tiles != 1 ? "s" : "") << " in " << (OTSYS_TIME() - start) / (1000.) << " seconds." << std::endl;
 	return count;
+}
+
+void Map::updatePlayerRegion(Player* player, const Position& oldPos, const Position& newPos) 
+{
+    auto oldRegion = std::make_pair(oldPos.x / GRID_SIZE, oldPos.y / GRID_SIZE);
+    auto newRegion = std::make_pair(newPos.x / GRID_SIZE, newPos.y / GRID_SIZE);
+    
+    if (oldRegion != newRegion) {
+        // Remove from old region
+        auto& oldVec = playerGrid[oldRegion];
+        oldVec.erase(std::remove(oldVec.begin(), oldVec.end(), player), oldVec.end());
+        
+        // Add to new region
+        playerGrid[newRegion].push_back(player);
+        
+        // Log grid changes for debugging (uncomment for debugging)
+        /*
+        std::cout << "Player " << player->getName() << " moved from region (" 
+                 << oldRegion.first << "," << oldRegion.second 
+                 << ") to (" << newRegion.first << "," << newRegion.second 
+                 << "). Grid now has " << playerGrid.size() << " regions." << std::endl;
+        */
+    }
+}
+
+SpectatorCache& Map::getSpectatorCache()
+{
+    return spectatorCache;
 }

@@ -9,7 +9,6 @@
 #include "configmanager.h"
 #include "container.h"
 #include "game.h"
-#include "pugicast.h"
 #include "spells.h"
 
 extern Game g_game;
@@ -102,9 +101,9 @@ bool Actions::registerEvent(Event_ptr event, const pugi::xml_node& node)
 
 	if ((attr = node.attribute("fromid"))) {
 		if (const auto& toIdAttribute = node.attribute("toid")) {
-			uint16_t fromId = pugi::cast<uint16_t>(attr.value());
+			uint16_t fromId = fs::xml_parse<uint16_t>(attr.value());
 			uint16_t iterId = fromId;
-			uint16_t toId = pugi::cast<uint16_t>(toIdAttribute.value());
+			uint16_t toId = fs::xml_parse<uint16_t>(toIdAttribute.value());
 			for (; iterId <= toId; iterId++) {
 				if (!useItemMap.emplace(iterId, *action).second) {
 					std::cout << "[Warning - Actions::registerEvent] Duplicate registered item with id: " << iterId
@@ -121,9 +120,9 @@ bool Actions::registerEvent(Event_ptr event, const pugi::xml_node& node)
 
 	if ((attr = node.attribute("fromuid"))) {
 		if (const auto& toUidAttribute = node.attribute("touid")) {
-			uint16_t fromUid = pugi::cast<uint16_t>(attr.value());
+			uint16_t fromUid = fs::xml_parse<uint16_t>(attr.value());
 			uint16_t iterUid = fromUid;
-			uint16_t toUid = pugi::cast<uint16_t>(toUidAttribute.value());
+			uint16_t toUid = fs::xml_parse<uint16_t>(toUidAttribute.value());
 			for (; iterUid <= toUid; iterUid++) {
 				if (!uniqueItemMap.emplace(iterUid, *action).second) {
 					std::cout << "[Warning - Actions::registerEvent] Duplicate registered item with unique id: "
@@ -141,9 +140,9 @@ bool Actions::registerEvent(Event_ptr event, const pugi::xml_node& node)
 
 	if ((attr = node.attribute("fromaid"))) {
 		if (const auto& toAidAttribute = node.attribute("toaid")) {
-			uint16_t fromAid = pugi::cast<uint16_t>(attr.value());
+			uint16_t fromAid = fs::xml_parse<uint16_t>(attr.value());
 			uint16_t iterAid = fromAid;
-			uint16_t toAid = pugi::cast<uint16_t>(toAidAttribute.value());
+			uint16_t toAid = fs::xml_parse<uint16_t>(toAidAttribute.value());
 			for (; iterAid <= toAid; iterAid++) {
 				if (!actionItemMap.emplace(iterAid, *action).second) {
 					std::cout << "[Warning - Actions::registerEvent] Duplicate registered item with action id: "

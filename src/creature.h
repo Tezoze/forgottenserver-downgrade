@@ -267,7 +267,6 @@ public:
 	void setCreatureLight(LightInfo lightInfo);
 
 	virtual void onThink(uint32_t interval);
-	void onAttacking(uint32_t interval);
 	virtual void onWalk();
 	virtual bool getNextStep(Direction& dir, uint32_t& flags);
 
@@ -353,6 +352,14 @@ public:
 
 	const auto& getDamageMap() const { return damageMap; }
 
+	virtual void onAddCreatureCheck() {}
+	virtual void onRemoveCreatureCheck() {}
+
+	virtual void onAttacking(uint32_t) {}
+	virtual void onAttackedCreatureKilled(Creature*) {}
+
+	void setUpdateMovePosition(bool value) { updateMovePosition = value; }
+
 protected:
 	virtual bool useCacheMap() const { return false; }
 
@@ -423,6 +430,7 @@ protected:
 	bool hiddenHealth = false;
 	bool canUseDefense = true;
 	bool movementBlocked = false;
+	bool updateMovePosition = false;
 
 	// creature script events
 	bool hasEventRegistered(CreatureEventType_t event) const

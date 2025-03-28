@@ -6,7 +6,6 @@
 #include "items.h"
 
 #include "movement.h"
-#include "pugicast.h"
 #include "script.h"
 #include "spells.h"
 #include "weapons.h"
@@ -588,7 +587,7 @@ bool Items::loadFromXml()
 	for (auto itemNode : doc.child("items").children()) {
 		pugi::xml_attribute idAttribute = itemNode.attribute("id");
 		if (idAttribute) {
-			parseItemNode(itemNode, pugi::cast<uint16_t>(idAttribute.value()));
+			parseItemNode(itemNode, fs::xml_parse<uint16_t>(idAttribute.value()));
 			continue;
 		}
 
@@ -605,8 +604,8 @@ bool Items::loadFromXml()
 			continue;
 		}
 
-		uint16_t id = pugi::cast<uint16_t>(fromIdAttribute.value());
-		uint16_t toId = pugi::cast<uint16_t>(toIdAttribute.value());
+		uint16_t id = fs::xml_parse<uint16_t>(fromIdAttribute.value());
+		uint16_t toId = fs::xml_parse<uint16_t>(toIdAttribute.value());
 		while (id <= toId) {
 			parseItemNode(itemNode, id++);
 		}
@@ -703,7 +702,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_WEIGHT: {
-					it.weight = pugi::cast<uint32_t>(valueAttribute.value());
+					it.weight = fs::xml_parse<uint32_t>(valueAttribute.value());
 					break;
 				}
 
@@ -718,27 +717,27 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_ARMOR: {
-					it.armor = pugi::cast<int32_t>(valueAttribute.value());
+					it.armor = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_DEFENSE: {
-					it.defense = pugi::cast<int32_t>(valueAttribute.value());
+					it.defense = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_EXTRADEF: {
-					it.extraDefense = pugi::cast<int32_t>(valueAttribute.value());
+					it.extraDefense = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ATTACK: {
-					it.attack = pugi::cast<int32_t>(valueAttribute.value());
+					it.attack = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ATTACK_SPEED: {
-					it.attackSpeed = pugi::cast<uint32_t>(valueAttribute.value());
+					it.attackSpeed = fs::xml_parse<uint32_t>(valueAttribute.value());
 					if (it.attackSpeed > 0 && it.attackSpeed < 100) {
 						std::cout << "[Warning - Items::parseItemNode] AttackSpeed lower than 100 for item: " << it.id
 						          << std::endl;
@@ -748,7 +747,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_ROTATETO: {
-					it.rotateTo = pugi::cast<uint16_t>(valueAttribute.value());
+					it.rotateTo = fs::xml_parse<uint16_t>(valueAttribute.value());
 					break;
 				}
 
@@ -797,7 +796,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_CONTAINERSIZE: {
-					it.maxItems = pugi::cast<uint16_t>(valueAttribute.value());
+					it.maxItems = fs::xml_parse<uint16_t>(valueAttribute.value());
 					break;
 				}
 
@@ -825,12 +824,12 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_MAXTEXTLEN: {
-					it.maxTextLen = pugi::cast<uint16_t>(valueAttribute.value());
+					it.maxTextLen = fs::xml_parse<uint16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_WRITEONCEITEMID: {
-					it.writeOnceItemId = pugi::cast<uint16_t>(valueAttribute.value());
+					it.writeOnceItemId = fs::xml_parse<uint16_t>(valueAttribute.value());
 					break;
 				}
 
@@ -913,7 +912,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_RANGE: {
-					it.shootRange = pugi::cast<uint16_t>(valueAttribute.value());
+					it.shootRange = fs::xml_parse<uint16_t>(valueAttribute.value());
 					break;
 				}
 
@@ -923,25 +922,25 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_DECAYTO: {
-					it.decayTo = pugi::cast<int32_t>(valueAttribute.value());
+					it.decayTo = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_TRANSFORMEQUIPTO: {
-					it.transformEquipTo = pugi::cast<uint16_t>(valueAttribute.value());
+					it.transformEquipTo = fs::xml_parse<uint16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_TRANSFORMDEEQUIPTO: {
-					it.transformDeEquipTo = pugi::cast<uint16_t>(valueAttribute.value());
+					it.transformDeEquipTo = fs::xml_parse<uint16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_DURATION: {
-					it.decayTimeMin = pugi::cast<uint32_t>(valueAttribute.value());
+					it.decayTimeMin = fs::xml_parse<uint32_t>(valueAttribute.value());
 
 					if (maxValueAttr) {
-						it.decayTimeMax = pugi::cast<uint32_t>(maxValueAttr.value());
+						it.decayTimeMax = fs::xml_parse<uint32_t>(maxValueAttr.value());
 					}
 					break;
 				}
@@ -952,7 +951,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_CHARGES: {
-					it.charges = pugi::cast<uint32_t>(valueAttribute.value());
+					it.charges = fs::xml_parse<uint32_t>(valueAttribute.value());
 					break;
 				}
 
@@ -967,13 +966,22 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_HITCHANCE: {
-					it.hitChance =
-					    std::min<int8_t>(100, std::max<int8_t>(-100, pugi::cast<int16_t>(valueAttribute.value())));
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute);
+					if (value < -100) {
+						value = -100;
+					} else if (value > 100) {
+						value = 100;
+					}
+					it.hitChance = static_cast<int8_t>(value);
 					break;
 				}
 
 				case ITEM_PARSE_MAXHITCHANCE: {
-					it.maxHitChance = std::min<uint32_t>(100, pugi::cast<uint32_t>(valueAttribute.value()));
+					uint32_t value = fs::xml_parse<uint32_t>(valueAttribute);
+					if (value > 100) {
+						value = 100;
+					}
+					it.maxHitChance = value;
 					break;
 				}
 
@@ -983,43 +991,43 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_SPEED: {
-					abilities.speed = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.speed = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_HEALTHGAIN: {
 					abilities.regeneration = true;
-					abilities.healthGain = pugi::cast<uint32_t>(valueAttribute.value());
+					abilities.healthGain = fs::xml_parse<uint32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_HEALTHGAINPERCENT: {
 					abilities.regeneration = true;
-					abilities.healthGainPercent = pugi::cast<uint32_t>(valueAttribute.value());
+					abilities.healthGainPercent = fs::xml_parse<uint32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_HEALTHTICKS: {
 					abilities.regeneration = true;
-					abilities.healthTicks = pugi::cast<uint32_t>(valueAttribute.value());
+					abilities.healthTicks = fs::xml_parse<uint32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MANAGAIN: {
 					abilities.regeneration = true;
-					abilities.manaGain = pugi::cast<uint32_t>(valueAttribute.value());
+					abilities.manaGain = fs::xml_parse<uint32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MANAGAINPERCENT: {
 					abilities.regeneration = true;
-					abilities.manaGainPercent = pugi::cast<uint32_t>(valueAttribute.value());
+					abilities.manaGainPercent = fs::xml_parse<uint32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MANATICKS: {
 					abilities.regeneration = true;
-					abilities.manaTicks = pugi::cast<uint32_t>(valueAttribute.value());
+					abilities.manaTicks = fs::xml_parse<uint32_t>(valueAttribute.value());
 					break;
 				}
 
@@ -1029,122 +1037,122 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_SKILLSWORD: {
-					abilities.skills[SKILL_SWORD] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.skills[SKILL_SWORD] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_SKILLAXE: {
-					abilities.skills[SKILL_AXE] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.skills[SKILL_AXE] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_SKILLCLUB: {
-					abilities.skills[SKILL_CLUB] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.skills[SKILL_CLUB] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_SKILLDIST: {
-					abilities.skills[SKILL_DISTANCE] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.skills[SKILL_DISTANCE] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_SKILLFISH: {
-					abilities.skills[SKILL_FISHING] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.skills[SKILL_FISHING] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_SKILLSHIELD: {
-					abilities.skills[SKILL_SHIELD] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.skills[SKILL_SHIELD] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_SKILLFIST: {
-					abilities.skills[SKILL_FIST] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.skills[SKILL_FIST] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_CRITICALHITAMOUNT: {
 					abilities.specialSkills[SPECIALSKILL_CRITICALHITAMOUNT] =
-					    pugi::cast<int32_t>(valueAttribute.value());
+					    fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_CRITICALHITCHANCE: {
 					abilities.specialSkills[SPECIALSKILL_CRITICALHITCHANCE] =
-					    pugi::cast<int32_t>(valueAttribute.value());
+					    fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MANALEECHAMOUNT: {
-					abilities.specialSkills[SPECIALSKILL_MANALEECHAMOUNT] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.specialSkills[SPECIALSKILL_MANALEECHAMOUNT] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MANALEECHCHANCE: {
-					abilities.specialSkills[SPECIALSKILL_MANALEECHCHANCE] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.specialSkills[SPECIALSKILL_MANALEECHCHANCE] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_LIFELEECHAMOUNT: {
-					abilities.specialSkills[SPECIALSKILL_LIFELEECHAMOUNT] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.specialSkills[SPECIALSKILL_LIFELEECHAMOUNT] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_LIFELEECHCHANCE: {
-					abilities.specialSkills[SPECIALSKILL_LIFELEECHCHANCE] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.specialSkills[SPECIALSKILL_LIFELEECHCHANCE] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAXHITPOINTS: {
-					abilities.stats[STAT_MAXHITPOINTS] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.stats[STAT_MAXHITPOINTS] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAXHITPOINTSPERCENT: {
-					abilities.statsPercent[STAT_MAXHITPOINTS] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.statsPercent[STAT_MAXHITPOINTS] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAXMANAPOINTS: {
-					abilities.stats[STAT_MAXMANAPOINTS] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.stats[STAT_MAXMANAPOINTS] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAXMANAPOINTSPERCENT: {
-					abilities.statsPercent[STAT_MAXMANAPOINTS] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.statsPercent[STAT_MAXMANAPOINTS] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICPOINTS: {
-					abilities.stats[STAT_MAGICPOINTS] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.stats[STAT_MAGICPOINTS] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICPOINTSPERCENT: {
-					abilities.statsPercent[STAT_MAGICPOINTS] = pugi::cast<int32_t>(valueAttribute.value());
+					abilities.statsPercent[STAT_MAGICPOINTS] = fs::xml_parse<int32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_FIELDABSORBPERCENTENERGY: {
 					abilities.fieldAbsorbPercent[combatTypeToIndex(COMBAT_ENERGYDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_FIELDABSORBPERCENTFIRE: {
 					abilities.fieldAbsorbPercent[combatTypeToIndex(COMBAT_FIREDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_FIELDABSORBPERCENTPOISON: {
 					abilities.fieldAbsorbPercent[combatTypeToIndex(COMBAT_EARTHDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTALL: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					for (auto& i : abilities.absorbPercent) {
 						i += value;
 					}
@@ -1152,7 +1160,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTELEMENTS: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_ENERGYDAMAGE)] += value;
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_FIREDAMAGE)] += value;
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_EARTHDAMAGE)] += value;
@@ -1161,7 +1169,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTMAGIC: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_ENERGYDAMAGE)] += value;
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_FIREDAMAGE)] += value;
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_EARTHDAMAGE)] += value;
@@ -1173,78 +1181,78 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 
 				case ITEM_PARSE_ABSORBPERCENTENERGY: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_ENERGYDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTFIRE: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_FIREDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTPOISON: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_EARTHDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTICE: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_ICEDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTHOLY: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_HOLYDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTDEATH: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_DEATHDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTLIFEDRAIN: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_LIFEDRAIN)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTMANADRAIN: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_MANADRAIN)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTDROWN: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_DROWNDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTPHYSICAL: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_PHYSICALDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTHEALING: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_HEALING)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ABSORBPERCENTUNDEFINED: {
 					abilities.absorbPercent[combatTypeToIndex(COMBAT_UNDEFINEDDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTALL: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					for (auto& i : abilities.reflect) {
 						i.percent += value;
 					}
@@ -1252,7 +1260,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTELEMENTS: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					abilities.reflect[combatTypeToIndex(COMBAT_ENERGYDAMAGE)].percent += value;
 					abilities.reflect[combatTypeToIndex(COMBAT_FIREDAMAGE)].percent += value;
 					abilities.reflect[combatTypeToIndex(COMBAT_EARTHDAMAGE)].percent += value;
@@ -1261,7 +1269,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTMAGIC: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					abilities.reflect[combatTypeToIndex(COMBAT_ENERGYDAMAGE)].percent += value;
 					abilities.reflect[combatTypeToIndex(COMBAT_FIREDAMAGE)].percent += value;
 					abilities.reflect[combatTypeToIndex(COMBAT_EARTHDAMAGE)].percent += value;
@@ -1273,72 +1281,72 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 
 				case ITEM_PARSE_REFLECTPERCENTENERGY: {
 					abilities.reflect[combatTypeToIndex(COMBAT_ENERGYDAMAGE)].percent +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTFIRE: {
 					abilities.reflect[combatTypeToIndex(COMBAT_FIREDAMAGE)].percent +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTEARTH: {
 					abilities.reflect[combatTypeToIndex(COMBAT_EARTHDAMAGE)].percent +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTICE: {
 					abilities.reflect[combatTypeToIndex(COMBAT_ICEDAMAGE)].percent +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTHOLY: {
 					abilities.reflect[combatTypeToIndex(COMBAT_HOLYDAMAGE)].percent +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTDEATH: {
 					abilities.reflect[combatTypeToIndex(COMBAT_DEATHDAMAGE)].percent +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTLIFEDRAIN: {
 					abilities.reflect[combatTypeToIndex(COMBAT_LIFEDRAIN)].percent +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTMANADRAIN: {
 					abilities.reflect[combatTypeToIndex(COMBAT_MANADRAIN)].percent +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTDROWN: {
 					abilities.reflect[combatTypeToIndex(COMBAT_DROWNDAMAGE)].percent +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTPHYSICAL: {
 					abilities.reflect[combatTypeToIndex(COMBAT_PHYSICALDAMAGE)].percent +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTPERCENTHEALING: {
 					abilities.reflect[combatTypeToIndex(COMBAT_HEALING)].percent +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEALL: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					for (auto& i : abilities.reflect) {
 						i.chance += value;
 					}
@@ -1346,7 +1354,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEELEMENTS: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					abilities.reflect[combatTypeToIndex(COMBAT_ENERGYDAMAGE)].chance += value;
 					abilities.reflect[combatTypeToIndex(COMBAT_FIREDAMAGE)].chance += value;
 					abilities.reflect[combatTypeToIndex(COMBAT_EARTHDAMAGE)].chance += value;
@@ -1355,7 +1363,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEMAGIC: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					abilities.reflect[combatTypeToIndex(COMBAT_ENERGYDAMAGE)].chance += value;
 					abilities.reflect[combatTypeToIndex(COMBAT_FIREDAMAGE)].chance += value;
 					abilities.reflect[combatTypeToIndex(COMBAT_EARTHDAMAGE)].chance += value;
@@ -1367,72 +1375,72 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 
 				case ITEM_PARSE_REFLECTCHANCEENERGY: {
 					abilities.reflect[combatTypeToIndex(COMBAT_ENERGYDAMAGE)].chance +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEFIRE: {
 					abilities.reflect[combatTypeToIndex(COMBAT_FIREDAMAGE)].chance +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEEARTH: {
 					abilities.reflect[combatTypeToIndex(COMBAT_EARTHDAMAGE)].chance +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEICE: {
 					abilities.reflect[combatTypeToIndex(COMBAT_ICEDAMAGE)].chance +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEHOLY: {
 					abilities.reflect[combatTypeToIndex(COMBAT_HOLYDAMAGE)].chance +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEDEATH: {
 					abilities.reflect[combatTypeToIndex(COMBAT_DEATHDAMAGE)].chance +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTCHANCELIFEDRAIN: {
 					abilities.reflect[combatTypeToIndex(COMBAT_LIFEDRAIN)].chance +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEMANADRAIN: {
 					abilities.reflect[combatTypeToIndex(COMBAT_MANADRAIN)].chance +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEDROWN: {
 					abilities.reflect[combatTypeToIndex(COMBAT_DROWNDAMAGE)].chance +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEPHYSICAL: {
 					abilities.reflect[combatTypeToIndex(COMBAT_PHYSICALDAMAGE)].chance +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_REFLECTCHANCEHEALING: {
 					abilities.reflect[combatTypeToIndex(COMBAT_HEALING)].chance +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTALL: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					for (auto& i : abilities.boostPercent) {
 						i += value;
 					}
@@ -1440,7 +1448,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTELEMENTS: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					abilities.boostPercent[combatTypeToIndex(COMBAT_ENERGYDAMAGE)] += value;
 					abilities.boostPercent[combatTypeToIndex(COMBAT_FIREDAMAGE)] += value;
 					abilities.boostPercent[combatTypeToIndex(COMBAT_EARTHDAMAGE)] += value;
@@ -1449,7 +1457,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTMAGIC: {
-					int16_t value = pugi::cast<int16_t>(valueAttribute.value());
+					int16_t value = fs::xml_parse<int16_t>(valueAttribute.value());
 					abilities.boostPercent[combatTypeToIndex(COMBAT_ENERGYDAMAGE)] += value;
 					abilities.boostPercent[combatTypeToIndex(COMBAT_FIREDAMAGE)] += value;
 					abilities.boostPercent[combatTypeToIndex(COMBAT_EARTHDAMAGE)] += value;
@@ -1461,139 +1469,139 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 
 				case ITEM_PARSE_BOOSTPERCENTENERGY: {
 					abilities.boostPercent[combatTypeToIndex(COMBAT_ENERGYDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTFIRE: {
 					abilities.boostPercent[combatTypeToIndex(COMBAT_FIREDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTEARTH: {
 					abilities.boostPercent[combatTypeToIndex(COMBAT_EARTHDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTICE: {
 					abilities.boostPercent[combatTypeToIndex(COMBAT_ICEDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTHOLY: {
 					abilities.boostPercent[combatTypeToIndex(COMBAT_HOLYDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTDEATH: {
 					abilities.boostPercent[combatTypeToIndex(COMBAT_DEATHDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTLIFEDRAIN: {
 					abilities.boostPercent[combatTypeToIndex(COMBAT_LIFEDRAIN)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTMANADRAIN: {
 					abilities.boostPercent[combatTypeToIndex(COMBAT_MANADRAIN)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTDROWN: {
 					abilities.boostPercent[combatTypeToIndex(COMBAT_DROWNDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTPHYSICAL: {
 					abilities.boostPercent[combatTypeToIndex(COMBAT_PHYSICALDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_BOOSTPERCENTHEALING: {
 					abilities.boostPercent[combatTypeToIndex(COMBAT_HEALING)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELENERGY: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_ENERGYDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELFIRE: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_FIREDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELPOISON: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_EARTHDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELICE: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_ICEDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELHOLY: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_HOLYDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELDEATH: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_DEATHDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELLIFEDRAIN: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_LIFEDRAIN)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELMANADRAIN: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_MANADRAIN)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELDROWN: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_DROWNDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELPHYSICAL: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_PHYSICALDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELHEALING: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_HEALING)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MAGICLEVELUNDEFINED: {
 					abilities.specialMagicLevelSkill[combatTypeToIndex(COMBAT_UNDEFINEDDAMAGE)] +=
-					    pugi::cast<int16_t>(valueAttribute.value());
+					    fs::xml_parse<int16_t>(valueAttribute.value());
 					break;
 				}
 
@@ -1710,15 +1718,23 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 
 							tmpStrValue = boost::algorithm::to_lower_copy<std::string>(subKeyAttribute.as_string());
 							if (tmpStrValue == "initdamage") {
-								initDamage = pugi::cast<int32_t>(subValueAttribute.value());
+								initDamage = fs::xml_parse<int32_t>(subValueAttribute);
 							} else if (tmpStrValue == "ticks") {
-								ticks = pugi::cast<uint32_t>(subValueAttribute.value());
+								ticks = fs::xml_parse<uint32_t>(subValueAttribute);
 							} else if (tmpStrValue == "count") {
-								count = std::max<int32_t>(1, pugi::cast<int32_t>(subValueAttribute.value()));
+								int32_t value = fs::xml_parse<int32_t>(subValueAttribute);
+								if (value < 1) {
+									value = 1;
+								}
+								count = value;
 							} else if (tmpStrValue == "start") {
-								start = std::max<int32_t>(0, pugi::cast<int32_t>(subValueAttribute.value()));
+								int32_t value = fs::xml_parse<int32_t>(subValueAttribute);
+								if (value < 0) {
+									value = 0;
+								}
+								start = value;
 							} else if (tmpStrValue == "damage") {
-								damage = -pugi::cast<int32_t>(subValueAttribute.value());
+								damage = -fs::xml_parse<int32_t>(subValueAttribute);
 								if (start > 0) {
 									std::list<int32_t> damageList;
 									ConditionDamage::generateDamageList(damage, start, damageList);
@@ -1762,12 +1778,12 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_LEVELDOOR: {
-					it.levelDoor = pugi::cast<uint32_t>(valueAttribute.value());
+					it.levelDoor = fs::xml_parse<uint32_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_MALETRANSFORMTO: {
-					uint16_t value = pugi::cast<uint16_t>(valueAttribute.value());
+					uint16_t value = fs::xml_parse<uint16_t>(valueAttribute.value());
 					it.transformToOnUse[PLAYERSEX_MALE] = value;
 					ItemType& other = getItemType(value);
 					if (other.transformToFree == 0) {
@@ -1781,7 +1797,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_FEMALETRANSFORMTO: {
-					uint16_t value = pugi::cast<uint16_t>(valueAttribute.value());
+					uint16_t value = fs::xml_parse<uint16_t>(valueAttribute.value());
 					it.transformToOnUse[PLAYERSEX_FEMALE] = value;
 
 					ItemType& other = getItemType(value);
@@ -1796,47 +1812,47 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_TRANSFORMTO: {
-					it.transformToFree = pugi::cast<uint16_t>(valueAttribute.value());
+					it.transformToFree = fs::xml_parse<uint16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_DESTROYTO: {
-					it.destroyTo = pugi::cast<uint16_t>(valueAttribute.value());
+					it.destroyTo = fs::xml_parse<uint16_t>(valueAttribute.value());
 					break;
 				}
 
 				case ITEM_PARSE_ELEMENTICE: {
-					abilities.elementDamage = pugi::cast<uint16_t>(valueAttribute.value());
+					abilities.elementDamage = fs::xml_parse<uint16_t>(valueAttribute.value());
 					abilities.elementType = COMBAT_ICEDAMAGE;
 					break;
 				}
 
 				case ITEM_PARSE_ELEMENTEARTH: {
-					abilities.elementDamage = pugi::cast<uint16_t>(valueAttribute.value());
+					abilities.elementDamage = fs::xml_parse<uint16_t>(valueAttribute.value());
 					abilities.elementType = COMBAT_EARTHDAMAGE;
 					break;
 				}
 
 				case ITEM_PARSE_ELEMENTFIRE: {
-					abilities.elementDamage = pugi::cast<uint16_t>(valueAttribute.value());
+					abilities.elementDamage = fs::xml_parse<uint16_t>(valueAttribute.value());
 					abilities.elementType = COMBAT_FIREDAMAGE;
 					break;
 				}
 
 				case ITEM_PARSE_ELEMENTENERGY: {
-					abilities.elementDamage = pugi::cast<uint16_t>(valueAttribute.value());
+					abilities.elementDamage = fs::xml_parse<uint16_t>(valueAttribute.value());
 					abilities.elementType = COMBAT_ENERGYDAMAGE;
 					break;
 				}
 
 				case ITEM_PARSE_ELEMENTDEATH: {
-					abilities.elementDamage = pugi::cast<uint16_t>(valueAttribute.value());
+					abilities.elementDamage = fs::xml_parse<uint16_t>(valueAttribute.value());
 					abilities.elementType = COMBAT_DEATHDAMAGE;
 					break;
 				}
 
 				case ITEM_PARSE_ELEMENTHOLY: {
-					abilities.elementDamage = pugi::cast<uint16_t>(valueAttribute.value());
+					abilities.elementDamage = fs::xml_parse<uint16_t>(valueAttribute.value());
 					abilities.elementType = COMBAT_HOLYDAMAGE;
 					break;
 				}
@@ -1862,7 +1878,7 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_WORTH: {
-					uint64_t worth = pugi::cast<uint64_t>(valueAttribute.value());
+					uint64_t worth = fs::xml_parse<uint64_t>(valueAttribute.value());
 					if (currencyItems.find(worth) != currencyItems.end()) {
 						std::cout << "[Warning - Items::parseItemNode] Duplicated currency worth. Item " << id
 						          << " redefines worth " << worth << std::endl;
@@ -1874,25 +1890,25 @@ void Items::parseItemNode(const pugi::xml_node& itemNode, uint16_t id)
 				}
 
 				case ITEM_PARSE_EXPERIENCERATE_BASE: {
-					int32_t rate = pugi::cast<int32_t>(valueAttribute.value());
+					int32_t rate = fs::xml_parse<int32_t>(valueAttribute.value());
 					abilities.experienceRate[static_cast<size_t>(ExperienceRateType::BASE)] = rate;
 					break;
 				}
 
 				case ITEM_PARSE_EXPERIENCERATE_LOW_LEVEL: {
-					int32_t rate = pugi::cast<int32_t>(valueAttribute.value());
+					int32_t rate = fs::xml_parse<int32_t>(valueAttribute.value());
 					abilities.experienceRate[static_cast<size_t>(ExperienceRateType::LOW_LEVEL)] = rate;
 					break;
 				}
 
 				case ITEM_PARSE_EXPERIENCERATE_BONUS: {
-					int32_t rate = pugi::cast<int32_t>(valueAttribute.value());
+					int32_t rate = fs::xml_parse<int32_t>(valueAttribute.value());
 					abilities.experienceRate[static_cast<size_t>(ExperienceRateType::BONUS)] = rate;
 					break;
 				}
 
 				case ITEM_PARSE_EXPERIENCERATE_STAMINA: {
-					int32_t rate = pugi::cast<int32_t>(valueAttribute.value());
+					int32_t rate = fs::xml_parse<int32_t>(valueAttribute.value());
 					abilities.experienceRate[static_cast<size_t>(ExperienceRateType::STAMINA)] = rate;
 					break;
 				}

@@ -152,20 +152,6 @@ void Creature::onThink(uint32_t interval)
 	}
 }
 
-void Creature::onAttacking(uint32_t interval)
-{
-	if (!attackedCreature) {
-		return;
-	}
-
-	onAttacked();
-	attackedCreature->onAttacked();
-
-	if (g_game.isSightClear(getPosition(), attackedCreature->getPosition(), true)) {
-		doAttacking(interval);
-	}
-}
-
 void Creature::onIdleStatus()
 {
 	if (!isDead()) {

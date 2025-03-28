@@ -32,6 +32,7 @@ std::forward_list<Condition*> Player::storedConditionList;
 Player::Player(ProtocolGame_ptr p) : Creature(), lastPing(OTSYS_TIME()), lastPong(lastPing), client(std::move(p))
 {
 	experienceRate.fill(100);
+	// Initialize lowercaseName when name is set later via setName
 }
 
 Player::~Player()
@@ -4433,4 +4434,38 @@ void Player::updateRegeneration()
 		condition->setParam(CONDITION_PARAM_MANAGAIN, vocation->getManaGainAmount());
 		condition->setParam(CONDITION_PARAM_MANATICKS, vocation->getManaGainTicks() * 1000);
 	}
+}
+
+// Add somewhere appropriate in the file, perhaps near other network-related methods
+
+void Player::sendPendingUpdates()
+{
+    if (pendingUpdates.empty()) return;
+    
+    NetworkMessage msg;
+    msg.addByte(0xFF); // Custom opcode for batched updates
+    msg.addU16(pendingUpdates.size()); // Number of updates
+    
+    for (auto&& update : pendingUpdates) {
+        msg.addByte(static_cast<uint8_t>(update.type));
+        msg.addPosition(update.pos);
+        
+        switch (update.type) {
+            case Update::MAGIC_EFFECT:
+                msg.addByte(update.effect);
+                break;
+            case Update::HEALTH:
+                msg.addU32(update.health);
+                break;
+            case Update::ANIMATED_TEXT:
+                msg.addString(update.textData.text);
+                msg.addByte(update.textData.color);
+                break;
+        }
+    }
+    
+    // Send via the network thread instead of directly
+    g_game.enqueueNetworkUpdate(this, std::move(msg));
+    
+    pendingUpdates.clear();
 }

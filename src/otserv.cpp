@@ -53,7 +53,7 @@ void mainLoader(ServiceManager* services)
 
 	srand(static_cast<unsigned int>(OTSYS_TIME()));
 #ifdef _WIN32
-	SetConsoleTitle(STATUS_SERVER_NAME);
+	SetConsoleTitleA(STATUS_SERVER_NAME);
 
 	// fixes a problem with escape characters not being processed in Windows consoles
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);

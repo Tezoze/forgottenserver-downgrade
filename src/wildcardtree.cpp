@@ -111,3 +111,54 @@ ReturnValue WildcardTreeNode::findOne(std::string_view query, std::string& resul
 		cur = &it->second;
 	} while (true);
 }
+
+void WildcardTreeNode::search(const std::string& query, std::vector<std::string>& result) const
+{
+	const WildcardTreeNode* cur = this;
+	
+	// Navigate to the node that represents the query prefix
+	for (char c : query) {
+		cur = cur->getChild(c);
+		if (!cur) {
+			return; // No matches found
+		}
+	}
+	
+	// If we reached a breakpoint, add the query itself as a result
+	if (cur->breakpoint) {
+		result.push_back(query);
+	}
+	
+	// Helper function to recursively collect all matches
+	std::function<void(const WildcardTreeNode*, std::string)> collectMatches = 
+		[&collectMatches, &result](const WildcardTreeNode* node, std::string current) {
+			if (node->breakpoint) {
+				result.push_back(current);
+			}
+			
+			for (const auto& pair : node->children) {
+				collectMatches(&pair.second, current + pair.first);
+			}
+		};
+	
+	// Collect all matches that start with the query
+	for (const auto& pair : cur->children) {
+		collectMatches(&pair.second, query + pair.first);
+	}
+}
+
+bool WildcardTreeNode::contains(std::string_view str) const
+{
+	const WildcardTreeNode* cur = this;
+	
+	// Navigate through the tree following the characters in str
+	for (char c : str) {
+		cur = cur->getChild(c);
+		if (!cur) {
+			return false; // Character not found in the tree
+		}
+	}
+	
+	// Check if we reached a valid endpoint (breakpoint)
+	return cur->breakpoint;
+}

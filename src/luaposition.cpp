@@ -66,7 +66,7 @@ int luaPositionSendMagicEffect(lua_State* L)
 	MagicEffectClasses magicEffect = getInteger<MagicEffectClasses>(L, 2);
 	const Position& position = getPosition(L, 1);
 	if (!spectators.empty()) {
-		Game::addMagicEffect(spectators, position, magicEffect);
+		g_game.addMagicEffect(spectators, position, magicEffect);
 	} else {
 		g_game.addMagicEffect(position, magicEffect);
 	}
@@ -87,7 +87,7 @@ int luaPositionSendDistanceEffect(lua_State* L)
 	const Position& positionEx = getPosition(L, 2);
 	const Position& position = getPosition(L, 1);
 	if (!spectators.empty()) {
-		Game::addDistanceEffect(spectators, position, positionEx, distanceEffect);
+		g_game.addDistanceEffect(spectators, position, positionEx, distanceEffect);
 	} else {
 		g_game.addDistanceEffect(position, positionEx, distanceEffect);
 	}

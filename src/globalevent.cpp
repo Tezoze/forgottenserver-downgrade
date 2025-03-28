@@ -6,7 +6,6 @@
 #include "globalevent.h"
 
 #include "configmanager.h"
-#include "pugicast.h"
 #include "scheduler.h"
 #include "tools.h"
 
@@ -293,7 +292,10 @@ bool GlobalEvent::configureEvent(const pugi::xml_node& node)
 			return false;
 		}
 	} else if ((attr = node.attribute("interval"))) {
-		interval = std::max<int32_t>(SCHEDULER_MINTICKS, pugi::cast<int32_t>(attr.value()));
+		interval = fs::xml_parse<int32_t>(attr);
+		if (interval < SCHEDULER_MINTICKS) {
+			interval = SCHEDULER_MINTICKS;
+		}
 		nextExecution = OTSYS_TIME() + interval;
 	} else {
 		std::cout << "[Error - GlobalEvent::configureEvent] No interval for globalevent with name " << name

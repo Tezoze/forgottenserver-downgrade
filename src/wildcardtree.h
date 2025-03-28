@@ -24,6 +24,12 @@ public:
 	void remove(std::string_view str);
 
 	ReturnValue findOne(std::string_view query, std::string& result) const;
+	
+	// Search for wildcard matches and store them in the result vector
+	void search(const std::string& query, std::vector<std::string>& result) const;
+	
+	// Check if the tree contains a pattern
+	bool contains(std::string_view str) const;
 
 private:
 	std::map<char, WildcardTreeNode> children;

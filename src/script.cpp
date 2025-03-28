@@ -75,15 +75,39 @@ bool Scripts::loadScripts(const std::string& folderName, bool isLib, bool reload
 
 	if (scriptsConsoleLogs) {
 		if (!disabled.empty()) {
-			std::cout << fmt::format("{{{}}}", fmt::join(disabled, ", ")) << std::endl;
+			std::string disabledStr = "{";
+			for (size_t i = 0; i < disabled.size(); ++i) {
+				if (i > 0) {
+					disabledStr += ", ";
+				}
+				disabledStr += disabled[i];
+			}
+			disabledStr += "}";
+			std::cout << disabledStr << std::endl;
 		}
 
 		if (!loaded.empty()) {
-			std::cout << fmt::format("{{{}}}", fmt::join(loaded, ", ")) << std::endl;
+			std::string loadedStr = "{";
+			for (size_t i = 0; i < loaded.size(); ++i) {
+				if (i > 0) {
+					loadedStr += ", ";
+				}
+				loadedStr += loaded[i];
+			}
+			loadedStr += "}";
+			std::cout << loadedStr << std::endl;
 		}
 
 		if (!reloaded.empty()) {
-			std::cout << fmt::format("{{{}}}", fmt::join(reloaded, ", ")) << std::endl;
+			std::string reloadedStr = "{";
+			for (size_t i = 0; i < reloaded.size(); ++i) {
+				if (i > 0) {
+					reloadedStr += ", ";
+				}
+				reloadedStr += reloaded[i];
+			}
+			reloadedStr += "}";
+			std::cout << reloadedStr << std::endl;
 		}
 	}
 

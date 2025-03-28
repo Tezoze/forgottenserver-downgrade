@@ -5,7 +5,6 @@
 
 #include "mounts.h"
 
-#include "pugicast.h"
 #include "tools.h"
 
 bool Mounts::reload()
@@ -24,7 +23,7 @@ bool Mounts::loadFromXml()
 	}
 
 	for (auto mountNode : doc.child("mounts").children()) {
-		uint16_t nodeId = pugi::cast<uint16_t>(mountNode.attribute("id").value());
+		uint16_t nodeId = fs::xml_parse<uint16_t>(mountNode.attribute("id").value());
 		if (nodeId == 0 || nodeId > std::numeric_limits<uint16_t>::max()) {
 			std::cout << "[Notice - Mounts::loadFromXml] Mount id \"" << nodeId << "\" is not within 1 and 65535 range"
 			          << std::endl;
@@ -37,8 +36,8 @@ bool Mounts::loadFromXml()
 		}
 
 		mounts.emplace_back(
-		    static_cast<uint16_t>(nodeId), pugi::cast<uint16_t>(mountNode.attribute("clientid").value()),
-		    mountNode.attribute("name").as_string(), pugi::cast<int32_t>(mountNode.attribute("speed").value()),
+		    static_cast<uint16_t>(nodeId), fs::xml_parse<uint16_t>(mountNode.attribute("clientid").value()),
+		    mountNode.attribute("name").as_string(), fs::xml_parse<int32_t>(mountNode.attribute("speed").value()),
 		    mountNode.attribute("premium").as_bool());
 	}
 	mounts.shrink_to_fit();

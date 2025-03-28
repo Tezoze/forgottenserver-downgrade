@@ -10,17 +10,27 @@
 #include "outputmessage.h"
 #include "scheduler.h"
 
+#include <boost/asio.hpp>               // Core Asio (io_context, tcp)
+#include <boost/asio/ip/address_v4.hpp> // For address_v4::from_string
+#include <boost/asio/post.hpp>          // For post
+#include <boost/asio/steady_timer.hpp>  // For steady_timer (death_timer)
+#include <iostream>
+#include <boost/asio/ip/address.hpp>
+
 Ban g_bans;
+
+// ServiceManager implementation
+ServiceManager::ServiceManager() : signals(io_context), death_timer(io_context) {}
 
 ServiceManager::~ServiceManager() { stop(); }
 
-void ServiceManager::die() { io_service.stop(); }
+void ServiceManager::die() { io_context.stop(); }
 
 void ServiceManager::run()
 {
 	assert(!running);
 	running = true;
-	io_service.run();
+	io_context.run();
 }
 
 void ServiceManager::stop()
@@ -33,18 +43,19 @@ void ServiceManager::stop()
 
 	for (auto& servicePortIt : acceptors) {
 		try {
-			io_service.post([servicePort = servicePortIt.second]() { servicePort->onStopServer(); });
-		} catch (boost::system::system_error& e) {
+			boost::asio::post(io_context, [servicePort = servicePortIt.second]() { servicePort->onStopServer(); });
+		} catch (const boost::system::system_error& e) {
 			std::cout << "[ServiceManager::stop] Network Error: " << e.what() << std::endl;
 		}
 	}
 
 	acceptors.clear();
 
-	death_timer.expires_from_now(std::chrono::seconds(3));
+	death_timer.expires_after(std::chrono::seconds(3));
 	death_timer.async_wait([this](const boost::system::error_code&) { die(); });
 }
 
+// ServicePort implementation
 ServicePort::~ServicePort() { close(); }
 
 bool ServicePort::is_single_socket() const { return !services.empty() && services.front()->is_single_socket(); }
@@ -70,7 +81,7 @@ void ServicePort::accept()
 		return;
 	}
 
-	auto connection = ConnectionManager::getInstance().createConnection(io_service, shared_from_this());
+	auto connection = ConnectionManager::getInstance().createConnection(io_context, shared_from_this());
 	acceptor->async_accept(connection->getSocket(),
 	                       [=, thisPtr = shared_from_this()](const boost::system::error_code& error) {
 		                       thisPtr->onAccept(connection, error);
@@ -112,7 +123,7 @@ void ServicePort::onAccept(Connection_ptr connection, const boost::system::error
 Protocol_ptr ServicePort::make_protocol(bool checksummed, NetworkMessage& msg, const Connection_ptr& connection) const
 {
 	uint8_t protocolID = msg.getByte();
-	for (auto& service : services) {
+	for (const auto& service : services) {
 		if (protocolID != service->get_protocol_identifier()) {
 			continue;
 		}
@@ -142,21 +153,19 @@ void ServicePort::open(uint16_t port)
 
 	try {
 		if (getBoolean(ConfigManager::BIND_ONLY_GLOBAL_ADDRESS)) {
-			acceptor.reset(new boost::asio::ip::tcp::acceptor(
-			    io_service,
-			    boost::asio::ip::tcp::endpoint(boost::asio::ip::address(boost::asio::ip::address_v4::from_string(
-			                                       std::string{getString(ConfigManager::IP)})),
-			                                   serverPort)));
+			acceptor = std::make_unique<boost::asio::ip::tcp::acceptor>(
+			    io_context,
+			    boost::asio::ip::tcp::endpoint(
+			        boost::asio::ip::make_address_v4(getString(ConfigManager::IP)),
+			        serverPort));
 		} else {
-			acceptor.reset(new boost::asio::ip::tcp::acceptor(
-			    io_service, boost::asio::ip::tcp::endpoint(
-			                    boost::asio::ip::address(boost::asio::ip::address_v4(INADDR_ANY)), serverPort)));
+			acceptor = std::make_unique<boost::asio::ip::tcp::acceptor>(
+			    io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4(INADDR_ANY), serverPort));
 		}
 
 		acceptor->set_option(boost::asio::ip::tcp::no_delay(true));
-
 		accept();
-	} catch (boost::system::system_error& e) {
+	} catch (const boost::system::system_error& e) {
 		std::cout << "[ServicePort::open] Error: " << e.what() << std::endl;
 
 		pendingStart = true;

@@ -9,6 +9,8 @@
 #include "const.h"
 #include "player.h"
 #include "vocation.h"
+#include "luascript.h"
+#include <unordered_map>
 
 extern Vocations g_vocations;
 
@@ -44,7 +46,7 @@ private:
 	Event_ptr getEvent(std::string_view nodeName) override;
 	bool registerEvent(Event_ptr event, const pugi::xml_node& node) override;
 
-	std::map<uint32_t, Weapon*> weapons;
+	std::unordered_map<uint32_t, Weapon*> weapons;
 
 	LuaScriptInterface scriptInterface{"Weapon Interface"};
 };

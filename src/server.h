@@ -7,6 +7,10 @@
 #include "connection.h"
 #include "signals.h"
 
+// Core Boost.Asio includes
+#include <boost/asio.hpp>               // io_context, tcp
+#include <boost/asio/ip/address_v4.hpp> // address_v4::from_string
+#include <boost/asio/steady_timer.hpp>  // steady_timer
 #include <memory>
 
 class Protocol;
@@ -39,7 +43,7 @@ public:
 class ServicePort : public std::enable_shared_from_this<ServicePort>
 {
 public:
-	explicit ServicePort(boost::asio::io_service& io_service) : io_service(io_service) {}
+	explicit ServicePort(boost::asio::io_context& io_context) : io_context(io_context) {}
 	~ServicePort();
 
 	// non-copyable
@@ -61,7 +65,7 @@ public:
 private:
 	void accept();
 
-	boost::asio::io_service& io_service;
+	boost::asio::io_context& io_context;
 	std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor;
 	std::vector<Service_ptr> services;
 
@@ -72,7 +76,7 @@ private:
 class ServiceManager
 {
 public:
-	ServiceManager() = default;
+	ServiceManager();
 	~ServiceManager();
 
 	// non-copyable
@@ -85,16 +89,15 @@ public:
 	template <typename ProtocolType>
 	bool add(uint16_t port);
 
-	bool is_running() const { return acceptors.empty() == false; }
+	bool is_running() const { return !acceptors.empty(); } // Simplified logic
 
 private:
 	void die();
 
 	std::unordered_map<uint16_t, ServicePort_ptr> acceptors;
-
-	boost::asio::io_service io_service;
-	Signals signals{io_service};
-	boost::asio::steady_timer death_timer{io_service};
+	boost::asio::io_context io_context;
+	Signals signals; // No initialization here
+	boost::asio::steady_timer death_timer;
 	bool running = false;
 };
 
@@ -108,11 +111,10 @@ bool ServiceManager::add(uint16_t port)
 	}
 
 	ServicePort_ptr service_port;
-
 	auto foundServicePort = acceptors.find(port);
 
 	if (foundServicePort == acceptors.end()) {
-		service_port = std::make_shared<ServicePort>(io_service);
+		service_port = std::make_shared<ServicePort>(io_context);
 		service_port->open(port);
 		acceptors[port] = service_port;
 	} else {
@@ -128,4 +130,4 @@ bool ServiceManager::add(uint16_t port)
 	return service_port->add_service(std::make_shared<Service<ProtocolType>>());
 }
 
-#endif
+#endif // FS_SERVER_H

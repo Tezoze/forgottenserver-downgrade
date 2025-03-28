@@ -198,7 +198,7 @@ private:
 	bool isLoaded = false;
 };
 
-using HouseMap = std::map<uint32_t, House*>;
+using HouseMap = std::unordered_map<uint32_t, House*>;
 
 enum RentPeriod_t
 {
